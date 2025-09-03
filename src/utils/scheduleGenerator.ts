@@ -30,31 +30,18 @@ export class ScheduleGenerator {
 
   private generateAllCombinations(): Subject[][] {
     const combinations: Subject[][] = [];
+    const n = this.subjects.length;
     
-    // Generate combinations of different sizes
-    for (let size = 1; size <= this.subjects.length; size++) {
-      const sizeCombinations = this.getCombinationsOfSize(this.subjects, size);
-      combinations.push(...sizeCombinations);
-    }
-    
-    return combinations;
-  }
-
-  private getCombinationsOfSize(subjects: Subject[], size: number): Subject[][] {
-    if (size === 0) return [[]];
-    if (size > subjects.length) return [];
-    if (size === subjects.length) return [subjects];
-    
-    const combinations: Subject[][] = [];
-    
-    for (let i = 0; i <= subjects.length - size; i++) {
-      const first = subjects[i];
-      const rest = subjects.slice(i + 1);
-      const restCombinations = this.getCombinationsOfSize(rest, size - 1);
-      
-      for (const combination of restCombinations) {
-        combinations.push([first, ...combination]);
+    // Generate all possible combinations using bit manipulation
+    // 2^n - 1 combinations (excluding empty set)
+    for (let i = 1; i < (1 << n); i++) {
+      const combination: Subject[] = [];
+      for (let j = 0; j < n; j++) {
+        if (i & (1 << j)) {
+          combination.push(this.subjects[j]);
+        }
       }
+      combinations.push(combination);
     }
     
     return combinations;
