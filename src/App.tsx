@@ -26,7 +26,8 @@ function App() {
 
   const handleBackToSetup = () => {
     setCurrentView('setup');
-    setGeneratedSchedules([]);
+    // Don't clear schedules, keep them in case user wants to go back
+    // setGeneratedSchedules([]);
   };
 
   if (isGenerating) {

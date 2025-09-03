@@ -9,7 +9,12 @@ export class ScheduleGenerator {
 
   generateAllSchedules(): Schedule[] {
     const validSchedules: Schedule[] = [];
-    const combinations = this.generateAllCombinations();
+    
+    // Limit combinations for performance with many subjects
+    const maxSubjects = this.subjects.length;
+    const combinations = maxSubjects > 20 
+      ? this.generateOptimizedCombinations() 
+      : this.generateAllCombinations();
 
     combinations.forEach((combination, index) => {
       if (this.isValidSchedule(combination)) {
@@ -26,6 +31,57 @@ export class ScheduleGenerator {
     });
 
     return validSchedules.sort((a, b) => b.score - a.score); // All valid schedules
+  }
+
+  private generateOptimizedCombinations(): Subject[][] {
+    const combinations: Subject[][] = [];
+    const n = this.subjects.length;
+    
+    // For large datasets, generate strategic combinations instead of all possible ones
+    // This prevents exponential explosion while still finding good schedules
+    
+    // 1. Single subjects
+    for (let i = 0; i < n; i++) {
+      combinations.push([this.subjects[i]]);
+    }
+    
+    // 2. Pairs of subjects
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < Math.min(n, i + 10); j++) { // Limit pairs to prevent explosion
+        combinations.push([this.subjects[i], this.subjects[j]]);
+      }
+    }
+    
+    // 3. Triplets (limited)
+    for (let i = 0; i < Math.min(n, 15); i++) {
+      for (let j = i + 1; j < Math.min(n, i + 8); j++) {
+        for (let k = j + 1; k < Math.min(n, j + 5); k++) {
+          combinations.push([this.subjects[i], this.subjects[j], this.subjects[k]]);
+        }
+      }
+    }
+    
+    // 4. Random larger combinations (4-6 subjects)
+    for (let size = 4; size <= Math.min(6, n); size++) {
+      for (let attempt = 0; attempt < Math.min(50, n * 2); attempt++) {
+        const combination: Subject[] = [];
+        const usedIndices = new Set<number>();
+        
+        while (combination.length < size && usedIndices.size < n) {
+          const randomIndex = Math.floor(Math.random() * n);
+          if (!usedIndices.has(randomIndex)) {
+            usedIndices.add(randomIndex);
+            combination.push(this.subjects[randomIndex]);
+          }
+        }
+        
+        if (combination.length === size) {
+          combinations.push(combination);
+        }
+      }
+    }
+    
+    return combinations;
   }
 
   private generateAllCombinations(): Subject[][] {

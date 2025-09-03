@@ -69,10 +69,19 @@ const SAMPLE_SUBJECTS: Subject[] = [
 ];
 
 export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
-  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>(() => {
+    // Load subjects from localStorage on component mount
+    const saved = localStorage.getItem('university-schedule-subjects');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [showManualForm, setShowManualForm] = useState(false);
   const [showTextInput, setShowTextInput] = useState(false);
   const [textInput, setTextInput] = useState('');
+
+  // Save subjects to localStorage whenever subjects change
+  React.useEffect(() => {
+    localStorage.setItem('university-schedule-subjects', JSON.stringify(subjects));
+  }, [subjects]);
 
   const handleUseSampleData = () => {
     setSubjects(SAMPLE_SUBJECTS);
