@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Subject } from '../types/schedule';
-import { Upload, FileText, Plus, Trash2, Calendar, User, Clock } from 'lucide-react';
+import { Upload, FileText, Plus, Trash2, Calendar, User, Clock, Type, Info } from 'lucide-react';
 
 interface DataUploaderProps {
   onDataSubmit: (subjects: Subject[]) => void;
@@ -71,6 +71,8 @@ const SAMPLE_SUBJECTS: Subject[] = [
 export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [showManualForm, setShowManualForm] = useState(false);
+  const [showTextInput, setShowTextInput] = useState(false);
+  const [textInput, setTextInput] = useState('');
 
   const handleUseSampleData = () => {
     setSubjects(SAMPLE_SUBJECTS);
@@ -112,6 +114,56 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
 
   const removeSubject = (index: number) => {
     setSubjects(subjects.filter((_, i) => i !== index));
+  };
+
+  const parseTextInput = () => {
+    try {
+      const lines = textInput.trim().split('\n').filter(line => line.trim());
+      const parsedSubjects: Subject[] = [];
+
+      lines.forEach((line, index) => {
+        const parts = line.split('|').map(part => part.trim());
+        
+        if (parts.length < 4) {
+          throw new Error(`Línea ${index + 1}: Formato incorrecto. Se requieren al menos 4 campos separados por |`);
+        }
+
+        const [code, name, creditsStr, ...schedulesParts] = parts;
+        const credits = parseInt(creditsStr);
+        
+        if (isNaN(credits)) {
+          throw new Error(`Línea ${index + 1}: Los créditos deben ser un número`);
+        }
+
+        const timeSlots = schedulesParts.map(schedulePart => {
+          const scheduleMatch = schedulePart.match(/(\w+)\s+(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/);
+          if (!scheduleMatch) {
+            throw new Error(`Línea ${index + 1}: Formato de horario incorrecto en "${schedulePart}". Use: Día HH:MM-HH:MM`);
+          }
+          
+          const [, day, startTime, endTime] = scheduleMatch;
+          return { day, startTime, endTime };
+        });
+
+        const subject: Subject = {
+          id: `text-${Date.now()}-${index}`,
+          name,
+          code,
+          credits,
+          professors: [{ id: 'prof1', name: 'Profesor', rating: 0 }],
+          timeSlots,
+          color: `#${Math.floor(Math.random()*16777215).toString(16)}`
+        };
+
+        parsedSubjects.push(subject);
+      });
+
+      setSubjects([...subjects, ...parsedSubjects]);
+      setTextInput('');
+      setShowTextInput(false);
+    } catch (error) {
+      alert(`Error al procesar el texto: ${(error as Error).message}`);
+    }
   };
 
   const addTimeSlot = (subjectIndex: number) => {
@@ -167,8 +219,66 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
               <Plus className="w-4 h-4" />
               <span>Agregar materia</span>
             </button>
+            <button
+              onClick={() => setShowTextInput(!showTextInput)}
+              className="flex items-center space-x-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+            >
+              <Type className="w-4 h-4" />
+              <span>Escribir por texto</span>
+            </button>
           </div>
         </div>
+
+        {showTextInput && (
+          <div className="mb-6 bg-purple-50 rounded-lg p-6 border border-purple-200">
+            <div className="flex items-start space-x-3 mb-4">
+              <Info className="w-5 h-5 text-purple-600 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-purple-900 mb-2">
+                  Formato de entrada de texto
+                </h3>
+                <div className="text-sm text-purple-800 space-y-1">
+                  <p><strong>Formato:</strong> Código | Nombre | Créditos | Horario1 | Horario2 | ...</p>
+                  <p><strong>Horario:</strong> Día HH:MM-HH:MM</p>
+                  <p><strong>Días válidos:</strong> Lunes, Martes, Miércoles, Jueves, Viernes</p>
+                </div>
+                <div className="mt-3 p-3 bg-white rounded border border-purple-200">
+                  <p className="text-xs font-medium text-purple-900 mb-1">Ejemplo:</p>
+                  <code className="text-xs text-purple-800 block">
+                    MAT101 | Cálculo Diferencial | 4 | Lunes 08:00-10:00 | Miércoles 08:00-10:00<br/>
+                    CS101 | Programación I | 3 | Martes 10:00-12:00 | Jueves 10:00-12:00
+                  </code>
+                </div>
+              </div>
+            </div>
+            
+            <textarea
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              className="w-full h-32 px-3 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm"
+              placeholder="Escribe las materias aquí siguiendo el formato especificado..."
+            />
+            
+            <div className="flex justify-end space-x-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowTextInput(false);
+                  setTextInput('');
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={parseTextInput}
+                disabled={!textInput.trim()}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              >
+                Procesar texto
+              </button>
+            </div>
+          </div>
+        )}
 
         {subjects.length > 0 && (
           <div className="mb-6">
