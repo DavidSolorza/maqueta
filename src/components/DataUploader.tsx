@@ -1,9 +1,24 @@
 import React, { useState } from 'react';
 import { Subject } from '../types/schedule';
-import { Upload, FileText, Plus, Trash2, Calendar, User, Clock, Type, Info } from 'lucide-react';
+import { ScheduleGenerator } from '../utils/scheduleGenerator';
+import { 
+  Upload, 
+  FileText, 
+  Plus, 
+  Trash2, 
+  Calendar, 
+  User, 
+  Clock, 
+  Type, 
+  Info,
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  Target
+} from 'lucide-react';
 
 interface DataUploaderProps {
-  onDataSubmit: (subjects: Subject[]) => void;
+  onDataSubmit: (subjects: Subject[], targetCount?: number) => void;
 }
 
 const SAMPLE_SUBJECTS: Subject[] = [
@@ -65,26 +80,77 @@ const SAMPLE_SUBJECTS: Subject[] = [
       { day: 'Miércoles', startTime: '16:00', endTime: '18:00' }
     ],
     color: '#ef4444'
+  },
+  {
+    id: '6',
+    name: 'Inglés Técnico',
+    code: 'ENG201',
+    credits: 2,
+    professors: [{ id: 'p6', name: 'Prof. Smith', rating: 4.3 }],
+    timeSlots: [
+      { day: 'Viernes', startTime: '10:00', endTime: '12:00' }
+    ],
+    color: '#06b6d4'
   }
 ];
 
-export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
+export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
   const [subjects, setSubjects] = useState<Subject[]>(() => {
-    // Load subjects from localStorage on component mount
     const saved = localStorage.getItem('university-schedule-subjects');
     return saved ? JSON.parse(saved) : [];
   });
   const [showManualForm, setShowManualForm] = useState(false);
   const [showTextInput, setShowTextInput] = useState(false);
   const [textInput, setTextInput] = useState('');
+  const [targetSubjectCount, setTargetSubjectCount] = useState<number | undefined>(undefined);
+  const [showAllSubjects, setShowAllSubjects] = useState(true);
+  const [conflicts, setConflicts] = useState<string[]>([]);
 
-  // Save subjects to localStorage whenever subjects change
   React.useEffect(() => {
     localStorage.setItem('university-schedule-subjects', JSON.stringify(subjects));
   }, [subjects]);
 
+  const validateAndAddSubject = (newSubject: Subject) => {
+    // Check for duplicates
+    const isDuplicate = subjects.some(s => 
+      s.code.toLowerCase() === newSubject.code.toLowerCase() ||
+      (s.name.toLowerCase() === newSubject.name.toLowerCase() && s.code !== newSubject.code)
+    );
+
+    if (isDuplicate) {
+      alert(`La materia ${newSubject.code} - ${newSubject.name} ya está registrada.`);
+      return false;
+    }
+
+    // Check for conflicts
+    const generator = new ScheduleGenerator([]);
+    const conflictMessages = generator.checkSubjectConflicts(newSubject, subjects);
+    
+    if (conflictMessages.length > 0) {
+      setConflicts(conflictMessages);
+      const proceed = confirm(
+        `⚠️ CONFLICTO DETECTADO:\n\n${conflictMessages.join('\n\n')}\n\n¿Deseas agregar la materia de todas formas?`
+      );
+      if (!proceed) {
+        return false;
+      }
+    }
+
+    setConflicts([]);
+    return true;
+  };
+
   const handleUseSampleData = () => {
-    setSubjects(SAMPLE_SUBJECTS);
+    // Remove duplicates and validate each subject
+    const validSubjects: Subject[] = [];
+    
+    SAMPLE_SUBJECTS.forEach(sampleSubject => {
+      if (validateAndAddSubject(sampleSubject)) {
+        validSubjects.push(sampleSubject);
+      }
+    });
+    
+    setSubjects([...subjects, ...validSubjects]);
   };
 
   const handleSubmit = () => {
@@ -92,7 +158,13 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
       alert('Por favor agrega al menos una materia');
       return;
     }
-    onDataSubmit(subjects);
+
+    if (targetSubjectCount && targetSubjectCount > subjects.length) {
+      alert(`No puedes generar horarios con ${targetSubjectCount} materias cuando solo tienes ${subjects.length} registradas.`);
+      return;
+    }
+
+    onDataSubmit(subjects, targetSubjectCount);
   };
 
   const addNewSubject = () => {
@@ -118,17 +190,28 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
     } else {
       (updated[index] as any)[field] = value;
     }
+    
+    // Validate on update
+    if (field === 'code' || field === 'name') {
+      const otherSubjects = updated.filter((_, i) => i !== index);
+      const generator = new ScheduleGenerator([]);
+      const conflictMessages = generator.checkSubjectConflicts(updated[index], otherSubjects);
+      setConflicts(conflictMessages);
+    }
+    
     setSubjects(updated);
   };
 
   const removeSubject = (index: number) => {
     setSubjects(subjects.filter((_, i) => i !== index));
+    setConflicts([]); // Clear conflicts when removing subjects
   };
 
   const parseTextInput = () => {
     try {
       const lines = textInput.trim().split('\n').filter(line => line.trim());
       const parsedSubjects: Subject[] = [];
+      const generator = new ScheduleGenerator([]);
 
       lines.forEach((line, index) => {
         const parts = line.split('|').map(part => part.trim());
@@ -164,12 +247,29 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
           color: `#${Math.floor(Math.random()*16777215).toString(16)}`
         };
 
+        // Check for duplicates in current subjects
+        const isDuplicate = subjects.some(s => 
+          s.code.toLowerCase() === code.toLowerCase()
+        );
+
+        if (isDuplicate) {
+          console.warn(`Materia duplicada omitida: ${code}`);
+          return;
+        }
+
+        // Check for conflicts
+        const conflictMessages = generator.checkSubjectConflicts(subject, [...subjects, ...parsedSubjects]);
+        if (conflictMessages.length > 0) {
+          throw new Error(`Línea ${index + 1}: ${conflictMessages[0]}`);
+        }
+
         parsedSubjects.push(subject);
       });
 
       setSubjects([...subjects, ...parsedSubjects]);
       setTextInput('');
       setShowTextInput(false);
+      setConflicts([]);
     } catch (error) {
       alert(`Error al procesar el texto: ${(error as Error).message}`);
     }
@@ -188,6 +288,13 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
   const updateTimeSlot = (subjectIndex: number, slotIndex: number, field: string, value: string) => {
     const updated = [...subjects];
     (updated[subjectIndex].timeSlots[slotIndex] as any)[field] = value;
+    
+    // Validate time slot changes
+    const generator = new ScheduleGenerator([]);
+    const otherSubjects = updated.filter((_, i) => i !== subjectIndex);
+    const conflictMessages = generator.checkSubjectConflicts(updated[subjectIndex], otherSubjects);
+    setConflicts(conflictMessages);
+    
     setSubjects(updated);
   };
 
@@ -198,7 +305,7 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
           Optimizador de Horarios Universitarios
@@ -207,6 +314,25 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
           Crea horarios universitarios optimizados sin choques y con mínimos huecos
         </p>
       </div>
+
+      {/* Conflict Alerts */}
+      {conflicts.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div className="flex items-start space-x-3">
+            <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+            <div>
+              <h3 className="font-medium text-red-900 mb-2">
+                ⚠️ Conflictos de Horario Detectados
+              </h3>
+              <ul className="text-sm text-red-800 space-y-1">
+                {conflicts.map((conflict, index) => (
+                  <li key={index}>• {conflict}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 mb-6">
         <div className="flex items-center justify-between mb-6">
@@ -238,6 +364,41 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
           </div>
         </div>
 
+        {/* Target Subject Count */}
+        <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200">
+          <div className="flex items-center space-x-3 mb-3">
+            <Target className="w-5 h-5 text-blue-600" />
+            <h3 className="font-medium text-blue-900">
+              Número específico de materias (opcional)
+            </h3>
+          </div>
+          <div className="flex items-center space-x-4">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={targetSubjectCount !== undefined}
+                onChange={(e) => setTargetSubjectCount(e.target.checked ? 4 : undefined)}
+                className="rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-blue-800">Generar horarios con exactamente</span>
+            </label>
+            {targetSubjectCount !== undefined && (
+              <input
+                type="number"
+                value={targetSubjectCount}
+                onChange={(e) => setTargetSubjectCount(parseInt(e.target.value) || 1)}
+                min="1"
+                max={subjects.length}
+                className="w-20 px-2 py-1 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            )}
+            <span className="text-blue-800">materias</span>
+          </div>
+          <p className="text-sm text-blue-700 mt-2">
+            Si no seleccionas esta opción, se generarán horarios con todas las combinaciones posibles (excluyendo horarios de una sola materia).
+          </p>
+        </div>
+
         {showTextInput && (
           <div className="mb-6 bg-purple-50 rounded-lg p-6 border border-purple-200">
             <div className="flex items-start space-x-3 mb-4">
@@ -250,6 +411,7 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
                   <p><strong>Formato:</strong> Código | Nombre | Créditos | Horario1 | Horario2 | ...</p>
                   <p><strong>Horario:</strong> Día HH:MM-HH:MM</p>
                   <p><strong>Días válidos:</strong> Lunes, Martes, Miércoles, Jueves, Viernes</p>
+                  <p><strong>Nota:</strong> Se detectarán automáticamente duplicados y conflictos</p>
                 </div>
                 <div className="mt-3 p-3 bg-white rounded border border-purple-200">
                   <p className="text-xs font-medium text-purple-900 mb-1">Ejemplo:</p>
@@ -289,23 +451,41 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
           </div>
         )}
 
-        {subjects.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
-              Materias agregadas ({subjects.length})
+        {/* All Subjects Display */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-gray-900">
+              Materias registradas ({subjects.length})
             </h3>
-            <div className="space-y-4">
-              {subjects.map((subject, index) => (
-                <div key={subject.id} className="border border-gray-200 rounded-lg p-4">
+            {subjects.length > 5 && (
+              <button
+                onClick={() => setShowAllSubjects(!showAllSubjects)}
+                className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                {showAllSubjects ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <span>{showAllSubjects ? 'Ocultar algunas' : 'Mostrar todas'}</span>
+              </button>
+            )}
+          </div>
+
+          {subjects.length > 0 ? (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {(showAllSubjects ? subjects : subjects.slice(0, 6)).map((subject, index) => (
+                <div key={subject.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
                       <div 
-                        className="w-4 h-4 rounded-full"
+                        className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
                         style={{ backgroundColor: subject.color }}
                       />
-                      <span className="font-medium text-gray-900">
-                        {subject.code || 'Nueva materia'} - {subject.name || 'Sin nombre'}
-                      </span>
+                      <div>
+                        <span className="font-medium text-gray-900 block">
+                          {subject.code || 'Sin código'}
+                        </span>
+                        <span className="text-sm text-gray-600">
+                          {subject.name || 'Sin nombre'}
+                        </span>
+                      </div>
                     </div>
                     <button
                       onClick={() => removeSubject(index)}
@@ -316,101 +496,82 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
                   </div>
                   
                   {showManualForm && (
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Código
-                        </label>
+                    <div className="space-y-3 mb-4">
+                      <div className="grid gap-2 grid-cols-2">
                         <input
                           type="text"
                           value={subject.code}
                           onChange={(e) => updateSubject(index, 'code', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Ej: MAT101"
+                          className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Código"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Nombre
-                        </label>
-                        <input
-                          type="text"
-                          value={subject.name}
-                          onChange={(e) => updateSubject(index, 'name', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Ej: Cálculo Diferencial"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Créditos
-                        </label>
                         <input
                           type="number"
                           value={subject.credits}
                           onChange={(e) => updateSubject(index, 'credits', parseInt(e.target.value) || 0)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                           min="1"
                           max="6"
+                          placeholder="Créditos"
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Profesor
-                        </label>
-                        <input
-                          type="text"
-                          value={subject.professors[0]?.name || ''}
-                          onChange={(e) => updateSubject(index, 'professors.name', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Nombre del profesor"
-                        />
-                      </div>
+                      <input
+                        type="text"
+                        value={subject.name}
+                        onChange={(e) => updateSubject(index, 'name', e.target.value)}
+                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Nombre de la materia"
+                      />
+                      <input
+                        type="text"
+                        value={subject.professors[0]?.name || ''}
+                        onChange={(e) => updateSubject(index, 'professors.name', e.target.value)}
+                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Profesor"
+                      />
                     </div>
                   )}
 
-                  <div className="mt-4">
+                  <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Horarios
-                      </label>
+                      <span className="text-xs font-medium text-gray-700">Horarios</span>
                       {showManualForm && (
                         <button
                           onClick={() => addTimeSlot(index)}
-                          className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                          className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
                         >
-                          + Agregar horario
+                          + Agregar
                         </button>
                       )}
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       {subject.timeSlots.map((slot, slotIndex) => (
-                        <div key={slotIndex} className="flex items-center space-x-2 text-sm">
+                        <div key={slotIndex} className="flex items-center space-x-2 text-xs">
                           {showManualForm ? (
                             <>
                               <select
                                 value={slot.day}
                                 onChange={(e) => updateTimeSlot(index, slotIndex, 'day', e.target.value)}
-                                className="px-2 py-1 border border-gray-300 rounded text-xs"
+                                className="px-1 py-1 border border-gray-300 rounded text-xs flex-1"
                               >
-                                <option value="Lunes">Lunes</option>
-                                <option value="Martes">Martes</option>
-                                <option value="Miércoles">Miércoles</option>
-                                <option value="Jueves">Jueves</option>
-                                <option value="Viernes">Viernes</option>
+                                <option value="Lunes">Lun</option>
+                                <option value="Martes">Mar</option>
+                                <option value="Miércoles">Mié</option>
+                                <option value="Jueves">Jue</option>
+                                <option value="Viernes">Vie</option>
                               </select>
                               <input
                                 type="time"
                                 value={slot.startTime}
                                 onChange={(e) => updateTimeSlot(index, slotIndex, 'startTime', e.target.value)}
-                                className="px-2 py-1 border border-gray-300 rounded text-xs"
+                                className="px-1 py-1 border border-gray-300 rounded text-xs w-16"
                               />
                               <span>-</span>
                               <input
                                 type="time"
                                 value={slot.endTime}
                                 onChange={(e) => updateTimeSlot(index, slotIndex, 'endTime', e.target.value)}
-                                className="px-2 py-1 border border-gray-300 rounded text-xs"
+                                className="px-1 py-1 border border-gray-300 rounded text-xs w-16"
                               />
                               <button
                                 onClick={() => removeTimeSlot(index, slotIndex)}
@@ -420,12 +581,12 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
                               </button>
                             </>
                           ) : (
-                            <>
-                              <Calendar className="w-4 h-4 text-gray-400" />
-                              <span className="text-gray-700">
-                                {slot.day}: {slot.startTime} - {slot.endTime}
+                            <div className="flex items-center space-x-2 bg-white rounded px-2 py-1 border border-gray-200">
+                              <Calendar className="w-3 h-3 text-gray-400" />
+                              <span className="text-gray-700 font-medium">
+                                {slot.day.slice(0, 3)}: {slot.startTime} - {slot.endTime}
                               </span>
-                            </>
+                            </div>
                           )}
                         </div>
                       ))}
@@ -433,9 +594,27 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
                   </div>
                 </div>
               ))}
+              
+              {!showAllSubjects && subjects.length > 6 && (
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-100 flex items-center justify-center">
+                  <span className="text-gray-600">
+                    +{subjects.length - 6} materias más
+                  </span>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
+              <Upload className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No hay materias registradas
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Usa los datos de ejemplo o agrega materias manualmente
+              </p>
+            </div>
+          )}
+        </div>
 
         {showManualForm && (
           <div className="mb-6">
@@ -449,29 +628,19 @@ export const DataUploader: React.FC<DataUploaderProps> = ({ onDataSubmit }) => {
           </div>
         )}
 
-        {subjects.length === 0 && (
-          <div className="text-center py-12">
-            <Upload className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No hay materias agregadas
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Usa los datos de ejemplo o agrega materias manualmente
-            </p>
-          </div>
-        )}
-
         {subjects.length > 0 && (
           <div className="flex justify-center">
             <button
               onClick={handleSubmit}
-              className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              disabled={conflicts.length > 0}
+              className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
             >
               Generar Horarios Optimizados
+              {targetSubjectCount && ` (${targetSubjectCount} materias)`}
             </button>
           </div>
         )}
       </div>
     </div>
   );
-};
+}

@@ -3,7 +3,7 @@ import { Subject } from '../types/schedule';
 import { DataUploader } from './DataUploader';
 
 interface SetupFormProps {
-  onSubmit: (subjects: Subject[]) => void;
+  onSubmit: (subjects: Subject[], targetCount?: number) => void;
 }
 
 export const SetupForm: React.FC<SetupFormProps> = ({ onSubmit }) => {

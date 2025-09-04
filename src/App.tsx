@@ -14,9 +14,9 @@ function App() {
     setIsGenerating(true);
     
     // Simulate processing time for better UX (shorter for better experience)
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 800));
     
-    const generator = new ScheduleGenerator(subjects);
+    const generator = new ScheduleGenerator(subjects, targetSubjectCount);
     const schedules = generator.generateAllSchedules();
     
     setGeneratedSchedules(schedules);
@@ -26,8 +26,6 @@ function App() {
 
   const handleBackToSetup = () => {
     setCurrentView('setup');
-    // Don't clear schedules, keep them in case user wants to go back
-    // setGeneratedSchedules([]);
   };
 
   if (isGenerating) {
@@ -60,6 +58,7 @@ function App() {
       ) : (
         <AllSchedulesView 
           schedules={generatedSchedules}
+          allSubjects={JSON.parse(localStorage.getItem('university-schedule-subjects') || '[]')}
           onBack={handleBackToSetup}
         />
       )}

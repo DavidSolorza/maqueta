@@ -11,25 +11,37 @@ import {
   Clock,
   BookOpen,
   Star,
-  Search
+  Search,
+  SortAsc,
+  SortDesc,
+  AlertCircle
 } from 'lucide-react';
 
 interface AllSchedulesViewProps {
   schedules: Schedule[];
   onBack: () => void;
+  allSubjects: any[];
 }
 
 export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
   schedules,
-  onBack
+  onBack,
+  allSubjects
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterRanking, setFilterRanking] = useState<string>('');
-  const [sortBy, setSortBy] = useState<'score' | 'gaps' | 'hours' | 'subjects'>('score');
+  const [sortBy, setSortBy] = useState<'subjects' | 'score' | 'gaps' | 'hours'>('subjects');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [searchTerm, setSearchTerm] = useState('');
+  const [minSubjects, setMinSubjects] = useState<number>(2);
 
-  // Get all unique rankings for filter
-  const allRankings = Array.from(new Set(schedules.flatMap(s => s.ranking)));
+  // Get all unique rankings for filter (always available from all subjects)
+  const allPossibleRankings = [
+    'Sin huecos', 'Muy compacto', 'Compacto', 'Muchos huecos',
+    'Carga muy ligera', 'Carga ligera', 'Carga normal', 'Carga pesada',
+    'Muchas materias', 'Carga completa', 'Carga parcial',
+    'Tardes libres', 'Mañanas libres', 'Clases temprano', 'Bien distribuido'
+  ];
 
   // Filter and sort schedules
   const filteredSchedules = schedules
@@ -40,21 +52,30 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
           s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           s.code.toLowerCase().includes(searchTerm.toLowerCase())
         );
-      return matchesRanking && matchesSearch;
+      const matchesMinSubjects = schedule.subjects.length >= minSubjects;
+      return matchesRanking && matchesSearch && matchesMinSubjects;
     })
     .sort((a, b) => {
+      let comparison = 0;
+      
       switch (sortBy) {
-        case 'score':
-          return b.score - a.score;
-        case 'gaps':
-          return a.gaps - b.gaps;
-        case 'hours':
-          return a.totalHours - b.totalHours;
         case 'subjects':
-          return b.subjects.length - a.subjects.length;
+          comparison = a.subjects.length - b.subjects.length;
+          break;
+        case 'score':
+          comparison = a.score - b.score;
+          break;
+        case 'gaps':
+          comparison = a.gaps - b.gaps;
+          break;
+        case 'hours':
+          comparison = a.totalHours - b.totalHours;
+          break;
         default:
-          return 0;
+          comparison = 0;
       }
+      
+      return sortOrder === 'desc' ? -comparison : comparison;
     });
 
   const handleExportSchedule = (schedule: Schedule) => {
@@ -63,8 +84,15 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
       subjects: schedule.subjects.map(subject => ({
         name: subject.name,
         code: subject.code,
-        timeSlots: subject.timeSlots
-      }))
+        timeSlots: subject.timeSlots,
+        professor: subject.professors[0]?.name || 'Sin profesor'
+      })),
+      stats: {
+        totalSubjects: schedule.subjects.length,
+        totalHours: schedule.totalHours,
+        gaps: schedule.gaps,
+        totalCredits: schedule.subjects.reduce((sum, s) => sum + s.credits, 0)
+      }
     };
     
     const dataStr = JSON.stringify(calendarData, null, 2);
@@ -73,28 +101,32 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = `horario-${schedule.id}.json`;
+    link.download = `horario-${schedule.subjects.length}-materias.json`;
     link.click();
     
     URL.revokeObjectURL(url);
   };
 
+  const toggleSortOrder = () => {
+    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+  };
+
   if (schedules.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-center">
-          <Clock className="w-16 h-16 text-red-500 mx-auto mb-4" />
+        <div className="text-center max-w-md">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             No se encontraron horarios válidos
           </h2>
           <p className="text-gray-600 mb-6">
-            Las materias seleccionadas tienen choques de horarios que impiden crear combinaciones válidas.
+            Las materias seleccionadas tienen choques de horarios que impiden crear combinaciones válidas, o el número específico de materias solicitado no es posible.
           </p>
           <button
             onClick={onBack}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Volver a cargar materias
+            Volver a configurar materias
           </button>
         </div>
       </div>
@@ -117,10 +149,10 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
             
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                Todas las Combinaciones Posibles
+                Horarios Optimizados
               </h1>
               <p className="text-gray-600">
-                {filteredSchedules.length} de {schedules.length} horarios válidos encontrados
+                {filteredSchedules.length} de {schedules.length} horarios válidos • {allSubjects.length} materias registradas
               </p>
             </div>
           </div>
@@ -129,15 +161,39 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
             <button
               onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
               className="p-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              title={`Cambiar a vista ${viewMode === 'grid' ? 'lista' : 'cuadrícula'}`}
             >
               {viewMode === 'grid' ? <List className="w-5 h-5" /> : <Grid className="w-5 h-5" />}
             </button>
           </div>
         </div>
 
+        {/* All Subjects Display */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+          <h3 className="font-medium text-gray-900 mb-3">
+            Todas las materias registradas ({allSubjects.length})
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {allSubjects.map(subject => (
+              <div
+                key={subject.id}
+                className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200"
+              >
+                <div 
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: subject.color }}
+                />
+                <span className="text-sm font-medium text-gray-900">{subject.code}</span>
+                <span className="text-sm text-gray-600">{subject.name}</span>
+                <span className="text-xs text-gray-500">({subject.credits} créditos)</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Filters */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-5">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Buscar materias
@@ -149,9 +205,23 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Buscar por materia..."
+                  placeholder="Buscar..."
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mínimo de materias
+              </label>
+              <input
+                type="number"
+                value={minSubjects}
+                onChange={(e) => setMinSubjects(parseInt(e.target.value) || 1)}
+                min="1"
+                max={allSubjects.length}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
 
             <div>
@@ -163,8 +233,8 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
                 onChange={(e) => setFilterRanking(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Todas las características</option>
-                {allRankings.map(ranking => (
+                <option value="">Todas</option>
+                {allPossibleRankings.map(ranking => (
                   <option key={ranking} value={ranking}>{ranking}</option>
                 ))}
               </select>
@@ -174,16 +244,25 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Ordenar por
               </label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="score">Puntuación</option>
-                <option value="gaps">Menos huecos</option>
-                <option value="hours">Menos horas</option>
-                <option value="subjects">Más materias</option>
-              </select>
+              <div className="flex space-x-1">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="subjects">Materias</option>
+                  <option value="score">Puntuación</option>
+                  <option value="gaps">Huecos</option>
+                  <option value="hours">Horas</option>
+                </select>
+                <button
+                  onClick={toggleSortOrder}
+                  className="px-2 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-md hover:bg-gray-200 transition-colors"
+                  title={`Ordenar ${sortOrder === 'asc' ? 'descendente' : 'ascendente'}`}
+                >
+                  {sortOrder === 'desc' ? <SortDesc className="w-4 h-4" /> : <SortAsc className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <div className="flex items-end">
@@ -191,7 +270,9 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
                 onClick={() => {
                   setFilterRanking('');
                   setSearchTerm('');
-                  setSortBy('score');
+                  setSortBy('subjects');
+                  setSortOrder('desc');
+                  setMinSubjects(2);
                 }}
                 className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
               >
@@ -209,7 +290,7 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
                 <div className="p-4 border-b border-gray-100">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold text-gray-900">
-                      Horario #{index + 1}
+                      {schedule.subjects.length} materias
                     </h3>
                     <div className="flex items-center space-x-1">
                       <Star className="w-4 h-4 text-yellow-500 fill-current" />
@@ -218,7 +299,7 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
                   </div>
                   
                   <div className="flex flex-wrap gap-1 mb-3">
-                    {schedule.ranking.map((rank, rankIndex) => (
+                    {schedule.ranking.slice(0, 3).map((rank, rankIndex) => (
                       <span
                         key={rankIndex}
                         className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
@@ -226,6 +307,11 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
                         {rank}
                       </span>
                     ))}
+                    {schedule.ranking.length > 3 && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        +{schedule.ranking.length - 3}
+                      </span>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-sm text-gray-600">
@@ -250,8 +336,22 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
 
                 <div className="p-4 border-t border-gray-100">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-600">
-                      {schedule.subjects.map(s => s.code).join(', ')}
+                    <div className="text-sm text-gray-600 flex-1 mr-2">
+                      <div className="flex flex-wrap gap-1">
+                        {schedule.subjects.map(s => (
+                          <span 
+                            key={s.id}
+                            className="inline-flex items-center px-2 py-1 rounded text-xs font-medium"
+                            style={{ 
+                              backgroundColor: s.color + '20',
+                              color: s.color,
+                              border: `1px solid ${s.color}40`
+                            }}
+                          >
+                            {s.code}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
@@ -262,7 +362,10 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
                         <Download className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => navigator.clipboard.writeText(JSON.stringify(schedule, null, 2))}
+                        onClick={() => {
+                          navigator.clipboard.writeText(JSON.stringify(schedule, null, 2));
+                          alert('Horario copiado al portapapeles');
+                        }}
                         className="p-1 text-gray-500 hover:text-green-600 transition-colors"
                         title="Copiar datos"
                       >
@@ -281,7 +384,7 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-4">
                     <h3 className="text-lg font-semibold text-gray-900">
-                      Horario #{index + 1}
+                      Horario con {schedule.subjects.length} materias
                     </h3>
                     <div className="flex items-center space-x-1">
                       <Star className="w-4 h-4 text-yellow-500 fill-current" />
@@ -345,16 +448,17 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
                     </div>
 
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <h4 className="font-medium text-gray-900 mb-2">Materias</h4>
-                      <div className="space-y-1">
+                      <h4 className="font-medium text-gray-900 mb-2">Materias incluidas</h4>
+                      <div className="space-y-2">
                         {schedule.subjects.map(subject => (
                           <div key={subject.id} className="flex items-center space-x-2 text-sm">
                             <div 
-                              className="w-3 h-3 rounded-full"
+                              className="w-3 h-3 rounded-full border border-white shadow-sm"
                               style={{ backgroundColor: subject.color }}
                             />
-                            <span className="text-gray-900">{subject.code}</span>
-                            <span className="text-gray-600">{subject.name}</span>
+                            <span className="font-medium text-gray-900">{subject.code}</span>
+                            <span className="text-gray-600 flex-1">{subject.name}</span>
+                            <span className="text-xs text-gray-500">{subject.credits}c</span>
                           </div>
                         ))}
                       </div>
@@ -373,7 +477,7 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
               No se encontraron horarios con estos filtros
             </h3>
             <p className="text-gray-600">
-              Intenta ajustar los filtros de búsqueda
+              Intenta ajustar los filtros de búsqueda o reducir el número mínimo de materias
             </p>
           </div>
         )}
