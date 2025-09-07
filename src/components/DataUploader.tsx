@@ -14,7 +14,8 @@ import {
   AlertTriangle,
   Eye,
   EyeOff,
-  Target
+  Target,
+  BookOpen
 } from 'lucide-react';
 
 interface DataUploaderProps {
@@ -491,30 +492,43 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
           </div>
 
           {subjects.length > 0 ? (
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {(showAllSubjects ? subjects : subjects.slice(0, 6)).map((subject, index) => (
-                <div key={subject.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div key={subject.id} className="border border-gray-200 rounded-xl p-4 bg-gradient-to-br from-white to-gray-50 hover:shadow-lg transition-all duration-200 hover:border-blue-300">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
                       <div 
-                        className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                        className="w-5 h-5 rounded-full border-2 border-white shadow-md flex-shrink-0"
                         style={{ backgroundColor: subject.color }}
                       />
                       <div>
                         <span className="font-medium text-gray-900 block">
                           {subject.code || 'Sin código'}
                         </span>
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-gray-600 line-clamp-1" title={subject.name}>
                           {subject.name || 'Sin nombre'}
                         </span>
                       </div>
                     </div>
                     <button
                       onClick={() => removeSubject(index)}
-                      className="p-1 text-red-500 hover:text-red-700 transition-colors"
+                      className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                      title="Eliminar materia"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
+                  </div>
+                  
+                  {/* Subject Stats */}
+                  <div className="flex items-center justify-between mb-3 text-xs text-gray-500">
+                    <div className="flex items-center space-x-1">
+                      <BookOpen className="w-3 h-3" />
+                      <span>{subject.credits} créditos</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Clock className="w-3 h-3" />
+                      <span>{subject.timeSlots.length} horario{subject.timeSlots.length !== 1 ? 's' : ''}</span>
+                    </div>
                   </div>
                   
                   {showManualForm && (
@@ -524,14 +538,14 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
                           type="text"
                           value={subject.code}
                           onChange={(e) => updateSubject(index, 'code', e.target.value)}
-                          className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           placeholder="Código"
                         />
                         <input
                           type="number"
                           value={subject.credits}
                           onChange={(e) => updateSubject(index, 'credits', parseInt(e.target.value) || 0)}
-                          className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           min="1"
                           max="6"
                           placeholder="Créditos"
@@ -541,14 +555,14 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
                         type="text"
                         value={subject.name}
                         onChange={(e) => updateSubject(index, 'name', e.target.value)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="Nombre de la materia"
                       />
                       <input
                         type="text"
                         value={subject.professors[0]?.name || ''}
                         onChange={(e) => updateSubject(index, 'professors.name', e.target.value)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="Profesor"
                       />
                     </div>
@@ -556,25 +570,28 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
 
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-gray-700">Horarios</span>
+                      <span className="text-xs font-medium text-gray-700 flex items-center space-x-1">
+                        <Calendar className="w-3 h-3" />
+                        <span>Horarios</span>
+                      </span>
                       {showManualForm && (
                         <button
                           onClick={() => addTimeSlot(index)}
-                          className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
+                          className="text-xs text-blue-600 hover:text-blue-800 transition-colors font-medium"
                         >
                           + Agregar
                         </button>
                       )}
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       {subject.timeSlots.map((slot, slotIndex) => (
-                        <div key={slotIndex} className="flex items-center space-x-2 text-xs">
+                        <div key={slotIndex} className="text-xs">
                           {showManualForm ? (
-                            <>
+                            <div className="flex items-center space-x-2">
                               <select
                                 value={slot.day}
                                 onChange={(e) => updateTimeSlot(index, slotIndex, 'day', e.target.value)}
-                                className="px-1 py-1 border border-gray-300 rounded text-xs flex-1"
+                                className="px-2 py-1 border border-gray-300 rounded text-xs flex-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
                               >
                                 <option value="Lunes">Lun</option>
                                 <option value="Martes">Mar</option>
@@ -586,27 +603,35 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
                                 type="time"
                                 value={slot.startTime}
                                 onChange={(e) => updateTimeSlot(index, slotIndex, 'startTime', e.target.value)}
-                                className="px-1 py-1 border border-gray-300 rounded text-xs w-16"
+                                className="px-2 py-1 border border-gray-300 rounded text-xs w-20 focus:outline-none focus:ring-1 focus:ring-blue-500"
                               />
                               <span>-</span>
                               <input
                                 type="time"
                                 value={slot.endTime}
                                 onChange={(e) => updateTimeSlot(index, slotIndex, 'endTime', e.target.value)}
-                                className="px-1 py-1 border border-gray-300 rounded text-xs w-16"
+                                className="px-2 py-1 border border-gray-300 rounded text-xs w-20 focus:outline-none focus:ring-1 focus:ring-blue-500"
                               />
                               <button
                                 onClick={() => removeTimeSlot(index, slotIndex)}
-                                className="p-1 text-red-500 hover:text-red-700 transition-colors"
+                                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                               >
                                 <Trash2 className="w-3 h-3" />
                               </button>
-                            </>
+                            </div>
                           ) : (
-                            <div className="flex items-center space-x-2 bg-white rounded px-2 py-1 border border-gray-200">
-                              <Calendar className="w-3 h-3 text-gray-400" />
-                              <span className="text-gray-700 font-medium">
-                                {slot.day.slice(0, 3)}: {slot.startTime} - {slot.endTime}
+                            <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-gray-200 hover:border-blue-300 transition-colors">
+                              <div className="flex items-center space-x-2">
+                                <div 
+                                  className="w-2 h-2 rounded-full"
+                                  style={{ backgroundColor: subject.color }}
+                                />
+                                <span className="text-gray-700 font-medium">
+                                  {slot.day.slice(0, 3)}
+                                </span>
+                              </div>
+                              <span className="text-gray-600 font-mono text-xs">
+                                {slot.startTime} - {slot.endTime}
                               </span>
                             </div>
                           )}
@@ -618,8 +643,8 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
               ))}
               
               {!showAllSubjects && subjects.length > 6 && (
-                <div className="border border-gray-200 rounded-lg p-4 bg-gray-100 flex items-center justify-center">
-                  <span className="text-gray-600">
+                <div className="border border-gray-200 rounded-xl p-4 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center hover:shadow-md transition-all duration-200">
+                  <span className="text-gray-600 font-medium">
                     +{subjects.length - 6} materias más
                   </span>
                 </div>
