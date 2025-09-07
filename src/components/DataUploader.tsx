@@ -118,7 +118,7 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
     );
 
     if (isDuplicate) {
-      alert(`La materia ${newSubject.code} - ${newSubject.name} ya está registrada.`);
+      alert(`⚠️ MATERIA DUPLICADA\n\nLa materia ${newSubject.code} - ${newSubject.name} ya está registrada.\n\nNo se agregará para evitar duplicados.`);
       return false;
     }
 
@@ -128,8 +128,8 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
     
     if (conflictMessages.length > 0) {
       setConflicts(conflictMessages);
-      const proceed = confirm(
-        `⚠️ CONFLICTO DETECTADO:\n\n${conflictMessages.join('\n\n')}\n\n¿Deseas agregar la materia de todas formas?`
+      const proceed = window.confirm(
+        `🚨 CONFLICTO DE HORARIOS DETECTADO\n\n${conflictMessages.join('\n\n')}\n\n⚠️ ADVERTENCIA: Esta materia generará choques de horarios y puede limitar las combinaciones válidas.\n\n¿Deseas agregar la materia de todas formas?`
       );
       if (!proceed) {
         return false;
@@ -211,6 +211,8 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
     try {
       const lines = textInput.trim().split('\n').filter(line => line.trim());
       const parsedSubjects: Subject[] = [];
+      const duplicateSubjects: string[] = [];
+      const conflictSubjects: string[] = [];
       const generator = new ScheduleGenerator([]);
 
       lines.forEach((line, index) => {
@@ -253,25 +255,45 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
         );
 
         if (isDuplicate) {
-          console.warn(`Materia duplicada omitida: ${code}`);
+          duplicateSubjects.push(`${code} - ${name}`);
           return;
         }
 
         // Check for conflicts
         const conflictMessages = generator.checkSubjectConflicts(subject, [...subjects, ...parsedSubjects]);
         if (conflictMessages.length > 0) {
-          throw new Error(`Línea ${index + 1}: ${conflictMessages[0]}`);
+          conflictSubjects.push(`${code} - ${name}: ${conflictMessages[0]}`);
+          return;
         }
 
         parsedSubjects.push(subject);
       });
 
+      // Show summary of processing
+      let message = `✅ PROCESAMIENTO COMPLETADO\n\n`;
+      message += `• ${parsedSubjects.length} materias agregadas exitosamente\n`;
+      
+      if (duplicateSubjects.length > 0) {
+        message += `• ${duplicateSubjects.length} materias duplicadas omitidas:\n`;
+        duplicateSubjects.forEach(dup => message += `  - ${dup}\n`);
+      }
+      
+      if (conflictSubjects.length > 0) {
+        message += `• ${conflictSubjects.length} materias con conflictos omitidas:\n`;
+        conflictSubjects.forEach(conf => message += `  - ${conf}\n`);
+      }
+      
+      if (duplicateSubjects.length > 0 || conflictSubjects.length > 0) {
+        message += `\n⚠️ Las materias omitidas no afectarán la generación de horarios.`;
+      }
+      
+      alert(message);
       setSubjects([...subjects, ...parsedSubjects]);
       setTextInput('');
       setShowTextInput(false);
       setConflicts([]);
     } catch (error) {
-      alert(`Error al procesar el texto: ${(error as Error).message}`);
+      alert(`🚨 ERROR AL PROCESAR TEXTO\n\n${(error as Error).message}\n\nPor favor revisa el formato y vuelve a intentar.`);
     }
   };
 

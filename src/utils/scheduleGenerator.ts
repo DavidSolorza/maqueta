@@ -18,8 +18,8 @@ export class ScheduleGenerator {
       : this.generateOptimizedCombinations();
 
     combinations.forEach((combination, index) => {
-      // Skip single-subject schedules unless specifically requested
-      if (combination.length === 1 && !this.targetSubjectCount) {
+      // Always skip single-subject schedules
+      if (combination.length === 1) {
         return;
       }
 
@@ -36,7 +36,7 @@ export class ScheduleGenerator {
       }
     });
 
-    // Sort by subject count first, then by score
+    // Sort by subject count (descending), then by score (descending)
     return validSchedules.sort((a, b) => {
       if (a.subjects.length !== b.subjects.length) {
         return b.subjects.length - a.subjects.length;

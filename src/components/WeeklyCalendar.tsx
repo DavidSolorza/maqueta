@@ -12,7 +12,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   isCompact = false 
 }) => {
   const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-  const hours = Array.from({ length: 14 }, (_, i) => i + 6); // 6 AM to 7 PM
+  const hours = Array.from({ length: 15 }, (_, i) => i + 6); // 6 AM to 8 PM
   const generator = new ScheduleGenerator([]);
 
   const getClassesForDayAndHour = (day: string, hour: number) => {
@@ -52,25 +52,26 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
   };
 
   const formatTimeAMPM = (hour: number): string => {
-    const period = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${displayHour}:00 ${period}`;
+    if (hour === 0) return '12:00 AM';
+    if (hour < 12) return `${hour}:00 AM`;
+    if (hour === 12) return '12:00 PM';
+    return `${hour - 12}:00 PM`;
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden ${
+    <div className={`bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden ${
       isCompact ? 'text-xs' : ''
     }`}>
       {/* Calendar Grid */}
-      <div className="grid grid-cols-6 divide-x divide-gray-200">
+      <div className="grid grid-cols-6 divide-x divide-gray-300">
         {/* Time Column */}
-        <div className="bg-gray-50 divide-y divide-gray-200">
-          <div className={`${isCompact ? 'p-2 h-8' : 'p-3 h-12'} font-medium text-gray-700 text-center bg-gray-100`}>
-            Hora
+        <div className="bg-gradient-to-b from-gray-100 to-gray-50 divide-y divide-gray-300">
+          <div className={`${isCompact ? 'p-2 h-8' : 'p-3 h-12'} font-semibold text-gray-800 text-center bg-gradient-to-r from-blue-100 to-indigo-100 border-b-2 border-blue-200`}>
+            🕐 Hora
           </div>
           {hours.map(hour => (
-            <div key={hour} className={`${isCompact ? 'p-1 h-12' : 'p-2 h-16'} text-center text-gray-600 border-b border-gray-100 flex items-center justify-center bg-gray-50`}>
-              <span className={`${isCompact ? 'text-xs' : 'text-sm'} font-medium`}>
+            <div key={hour} className={`${isCompact ? 'p-1 h-12' : 'p-2 h-16'} text-center text-gray-700 border-b border-gray-200 flex items-center justify-center bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 transition-colors`}>
+              <span className={`${isCompact ? 'text-xs' : 'text-sm'} font-semibold`}>
                 {formatTimeAMPM(hour)}
               </span>
             </div>
@@ -79,15 +80,15 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
 
         {/* Day Columns */}
         {days.map(day => (
-          <div key={day} className="relative divide-y divide-gray-100">
-            <div className={`${isCompact ? 'p-2 h-8' : 'p-3 h-12'} font-medium text-gray-700 text-center bg-gray-100 border-b-2 border-gray-200`}>
-              {isCompact ? day.slice(0, 3) : day}
+          <div key={day} className="relative divide-y divide-gray-200">
+            <div className={`${isCompact ? 'p-2 h-8' : 'p-3 h-12'} font-semibold text-gray-800 text-center bg-gradient-to-r from-blue-100 to-indigo-100 border-b-2 border-blue-200`}>
+              {isCompact ? day.slice(0, 3).toUpperCase() : day}
             </div>
             
             {/* Time Slots */}
             <div className="relative">
               {hours.map(hour => (
-                <div key={hour} className={`${isCompact ? 'h-12' : 'h-16'} border-b border-gray-100 relative hover:bg-gray-50 transition-colors`}>
+                <div key={hour} className={`${isCompact ? 'h-12' : 'h-16'} border-b border-gray-200 relative hover:bg-blue-50 transition-colors`}>
                   {/* Render classes that start in this hour */}
                   {getClassesForDayAndHour(day, hour).map((classInfo, index) => {
                     const duration = timeToMinutes(classInfo.slot.endTime) - timeToMinutes(classInfo.slot.startTime);
@@ -98,22 +99,27 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({
                     return (
                       <div
                         key={`${classInfo.subject.id}-${index}`}
-                        className="absolute left-1 right-1 rounded-lg p-2 text-white shadow-md z-10 overflow-hidden border-l-4 hover:shadow-lg transition-shadow"
+                        className="absolute left-1 right-1 rounded-lg p-2 text-white shadow-lg z-10 overflow-hidden border-l-4 hover:shadow-xl transition-all duration-200 transform hover:scale-105"
                         style={{
                           backgroundColor: classInfo.subject.color,
                           borderLeftColor: classInfo.subject.color,
                           height: `${heightInRem}rem`,
                           top: `${topOffset}rem`,
-                          filter: 'brightness(0.95)'
+                          filter: 'brightness(0.95)',
+                          boxShadow: `0 4px 12px ${classInfo.subject.color}40`
                         }}
                       >
                         <div className={`font-semibold ${isCompact ? 'text-xs' : 'text-sm'} leading-tight mb-1`}>
                           {classInfo.subject.code}
                         </div>
-                        <div className={`${isCompact ? 'text-xs' : 'text-xs'} opacity-90 leading-tight`}>
-                          {classInfo.subject.name}
-                        </div>
-                        <div className={`${isCompact ? 'text-xs' : 'text-xs'} opacity-80 mt-1 font-medium`}>
+                        {!isCompact && (
+                          <div className="text-xs opacity-90 leading-tight mb-1">
+                            {classInfo.subject.name.length > 20 
+                              ? classInfo.subject.name.substring(0, 20) + '...' 
+                              : classInfo.subject.name}
+                          </div>
+                        )}
+                        <div className={`${isCompact ? 'text-xs' : 'text-xs'} opacity-90 font-medium bg-black bg-opacity-20 rounded px-1`}>
                           {generator.formatTimeToAMPM(classInfo.slot.startTime)} - {generator.formatTimeToAMPM(classInfo.slot.endTime)}
                         </div>
                       </div>

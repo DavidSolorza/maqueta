@@ -21,27 +21,29 @@ interface AllSchedulesViewProps {
   schedules: Schedule[];
   onBack: () => void;
   allSubjects: any[];
+  targetSubjectCount?: number;
 }
 
 export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
   schedules,
   onBack,
-  allSubjects
+  allSubjects,
+  targetSubjectCount
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [filterRanking, setFilterRanking] = useState<string>('');
   const [sortBy, setSortBy] = useState<'subjects' | 'score' | 'gaps' | 'hours'>('subjects');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [searchTerm, setSearchTerm] = useState('');
-  const [minSubjects, setMinSubjects] = useState<number>(2);
+  const [minSubjects, setMinSubjects] = useState<number>(targetSubjectCount || 2);
 
   // Get all unique rankings for filter (always available from all subjects)
-  const allPossibleRankings = [
+  const allPossibleRankings = React.useMemo(() => [
     'Sin huecos', 'Muy compacto', 'Compacto', 'Muchos huecos',
     'Carga muy ligera', 'Carga ligera', 'Carga normal', 'Carga pesada',
     'Muchas materias', 'Carga completa', 'Carga parcial',
     'Tardes libres', 'Mañanas libres', 'Clases temprano', 'Bien distribuido'
-  ];
+  ], []);
 
   // Filter and sort schedules
   const filteredSchedules = schedules
@@ -120,7 +122,10 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
             No se encontraron horarios válidos
           </h2>
           <p className="text-gray-600 mb-6">
-            Las materias seleccionadas tienen choques de horarios que impiden crear combinaciones válidas, o el número específico de materias solicitado no es posible.
+            {targetSubjectCount 
+              ? `No es posible crear horarios con exactamente ${targetSubjectCount} materias sin conflictos.`
+              : 'Las materias seleccionadas tienen choques de horarios que impiden crear combinaciones válidas.'
+            }
           </p>
           <button
             onClick={onBack}
@@ -153,6 +158,7 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
               </h1>
               <p className="text-gray-600">
                 {filteredSchedules.length} de {schedules.length} horarios válidos • {allSubjects.length} materias registradas
+                {targetSubjectCount && ` • Mostrando horarios con ${targetSubjectCount} materias`}
               </p>
             </div>
           </div>
@@ -169,23 +175,37 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
         </div>
 
         {/* All Subjects Display */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <h3 className="font-medium text-gray-900 mb-3">
-            Todas las materias registradas ({allSubjects.length})
+            📚 Todas las materias disponibles ({allSubjects.length})
           </h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {allSubjects.map(subject => (
               <div
                 key={subject.id}
-                className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200"
+                className="flex items-center space-x-3 px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200"
               >
                 <div 
-                  className="w-3 h-3 rounded-full"
+                  className="w-4 h-4 rounded-full border-2 border-white shadow-sm flex-shrink-0"
                   style={{ backgroundColor: subject.color }}
                 />
-                <span className="text-sm font-medium text-gray-900">{subject.code}</span>
-                <span className="text-sm text-gray-600">{subject.name}</span>
-                <span className="text-xs text-gray-500">({subject.credits} créditos)</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-semibold text-gray-900">{subject.code}</span>
+                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">
+                      {subject.credits}c
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 truncate" title={subject.name}>
+                    {subject.name}
+                  </p>
+                  <div className="flex items-center space-x-1 mt-1">
+                    <Clock className="w-3 h-3 text-gray-400" />
+                    <span className="text-xs text-gray-500">
+                      {subject.timeSlots.length} horario{subject.timeSlots.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -212,7 +232,7 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mínimo de materias
+                {targetSubjectCount ? 'Materias exactas' : 'Mínimo de materias'}
               </label>
               <input
                 type="number"
@@ -220,8 +240,14 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
                 onChange={(e) => setMinSubjects(parseInt(e.target.value) || 1)}
                 min="1"
                 max={allSubjects.length}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={!!targetSubjectCount}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
+              {targetSubjectCount && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Fijo en {targetSubjectCount} materias
+                </p>
+              )}
             </div>
 
             <div>
@@ -272,7 +298,7 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({
                   setSearchTerm('');
                   setSortBy('subjects');
                   setSortOrder('desc');
-                  setMinSubjects(2);
+                  setMinSubjects(targetSubjectCount || 2);
                 }}
                 className="w-full px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
               >

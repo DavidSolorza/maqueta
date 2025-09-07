@@ -9,14 +9,16 @@ function App() {
   const [currentView, setCurrentView] = useState<'setup' | 'results'>('setup');
   const [generatedSchedules, setGeneratedSchedules] = useState<Schedule[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [targetSubjectCount, setTargetSubjectCount] = useState<number | undefined>(undefined);
 
-  const handleFormSubmit = async (subjects: Subject[]) => {
+  const handleFormSubmit = async (subjects: Subject[], targetCount?: number) => {
     setIsGenerating(true);
+    setTargetSubjectCount(targetCount);
     
     // Simulate processing time for better UX (shorter for better experience)
     await new Promise(resolve => setTimeout(resolve, 800));
     
-    const generator = new ScheduleGenerator(subjects, targetSubjectCount);
+    const generator = new ScheduleGenerator(subjects, targetCount);
     const schedules = generator.generateAllSchedules();
     
     setGeneratedSchedules(schedules);
@@ -59,6 +61,7 @@ function App() {
         <AllSchedulesView 
           schedules={generatedSchedules}
           allSubjects={JSON.parse(localStorage.getItem('university-schedule-subjects') || '[]')}
+          targetSubjectCount={targetSubjectCount}
           onBack={handleBackToSetup}
         />
       )}
