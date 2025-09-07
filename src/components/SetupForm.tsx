@@ -1,6 +1,6 @@
 import React from 'react';
 import { Subject } from '../types/schedule';
-import { DataUploader } from './DataUploader';
+import DataUploader from './DataUploader';
 
 interface SetupFormProps {
   onSubmit: (subjects: Subject[], targetCount?: number) => void;
