@@ -5,6 +5,7 @@ import { ScheduleGenerator } from './utils/scheduleGenerator';
 import { Subject, Schedule } from './types/schedule';
 import { RotateCcw, Sun, Moon } from 'lucide-react';
 import { getInitialTheme, toggleTheme } from './utils/theme';
+import SchedulerChatbot from './components/SchedulerChatbot.tsx'
 
 function App() {
   const [currentView, setCurrentView] = useState<'setup' | 'results'>('setup');
@@ -65,6 +66,10 @@ function App() {
         </button>
       </div>
       {currentView === 'setup' ? <SetupForm onSubmit={handleFormSubmit} /> : <AllSchedulesView schedules={generatedSchedules} allSubjects={JSON.parse(localStorage.getItem('university-schedule-subjects') || '[]')} targetSubjectCount={targetSubjectCount} onBack={handleBackToSetup} />}
+
+      <div id="chatbot">
+        <SchedulerChatbot/>
+      </div>
     </div>
   );
 }
