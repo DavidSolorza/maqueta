@@ -153,12 +153,12 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({ schedules, o
 
   if (schedules.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-indigo-900">
         <div className="max-w-md text-center">
-          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-          <h2 className="mb-2 text-2xl font-bold text-gray-900">No se encontraron horarios válidos</h2>
-          <p className="mb-6 text-gray-600">{targetSubjectCount ? `No es posible crear horarios con exactamente ${targetSubjectCount} materias sin conflictos.` : 'Las materias seleccionadas tienen choques de horarios que impiden crear combinaciones válidas.'}</p>
-          <button onClick={onBack} className="px-6 py-3 text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700">
+          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500 dark:text-red-400" />
+          <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">No se encontraron horarios válidos</h2>
+          <p className="mb-6 text-gray-600 dark:text-gray-300">{targetSubjectCount ? `No es posible crear horarios con exactamente ${targetSubjectCount} materias sin conflictos.` : 'Las materias seleccionadas tienen choques de horarios que impiden crear combinaciones válidas.'}</p>
+          <button onClick={onBack} className="px-6 py-3 text-white transition-colors bg-blue-600 dark:bg-blue-700 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800">
             Volver a configurar materias
           </button>
         </div>
@@ -167,19 +167,19 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({ schedules, o
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container px-4 py-8 mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
-            <button onClick={onBack} className="flex items-center px-3 py-2 space-x-2 text-gray-600 transition-colors hover:text-gray-900">
+            <button onClick={onBack} className="flex items-center px-3 py-2 space-x-2 text-gray-600 dark:text-gray-400 transition-colors hover:text-gray-900 dark:hover:text-white">
               <ArrowLeft className="w-5 h-5" />
               <span>Volver</span>
             </button>
 
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Horarios Optimizados</h1>
-              <p className="text-gray-600">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Horarios Optimizados</h1>
+              <p className="text-gray-600 dark:text-gray-400">
                 {filteredSchedules.length} de {schedules.length} horarios válidos • {allSubjects.length} materias registradas
                 {targetSubjectCount && ` • Mostrando horarios con ${targetSubjectCount} materias`}
               </p>
@@ -187,15 +187,15 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({ schedules, o
           </div>
 
           <div className="flex items-center space-x-2">
-            <button onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')} className="p-2 transition-colors bg-white border border-gray-300 rounded-md hover:bg-gray-50" title={`Cambiar a vista ${viewMode === 'grid' ? 'lista' : 'cuadrícula'}`}>
-              {viewMode === 'grid' ? <List className="w-5 h-5" /> : <Grid className="w-5 h-5" />}
+            <button onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')} className="p-2 transition-colors bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700" title={`Cambiar a vista ${viewMode === 'grid' ? 'lista' : 'cuadrícula'}`}>
+              {viewMode === 'grid' ? <List className="w-5 h-5 dark:text-gray-300" /> : <Grid className="w-5 h-5 dark:text-gray-300" />}
             </button>
           </div>
         </div>
 
         {/* All Subjects Display */}
-        <div className="p-6 mb-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-          <h3 className="mb-3 font-medium text-gray-900">📚 Todas las materias disponibles ({allSubjects.length})</h3>
+        <div className="p-6 mb-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+          <h3 className="mb-3 font-medium text-gray-900 dark:text-white">📚 Todas las materias disponibles ({allSubjects.length})</h3>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {allSubjects.map((subject) => (
               <div key={subject.id} className="flex items-center px-4 py-3 space-x-3 transition-all duration-200 border border-gray-200 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 hover:shadow-md">
