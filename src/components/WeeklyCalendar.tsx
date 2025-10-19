@@ -56,15 +56,15 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ schedule, isComp
   };
 
   return (
-    <div id={`${schedule.id}`} className={`bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden ${isCompact ? 'text-xs' : ''}`}>
+    <div id={`${schedule.id}`} className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden ${isCompact ? 'text-xs' : ''}`}>
       <div className="overflow-x-auto">
         <div className="inline-flex min-w-full">
           {/* Time Column - Sticky */}
-          <div className="flex-shrink-0 sticky left-0 z-20 bg-white border-r-2 border-gray-300">
-            <div className={`${isCompact ? 'p-2 h-8' : 'p-3 h-12'} font-semibold text-gray-800 text-center bg-gradient-to-r from-blue-100 to-indigo-100 border-b-2 border-blue-200`}>🕐 Hora</div>
-            <div className="bg-gradient-to-b from-gray-100 to-gray-50">
+          <div className="flex-shrink-0 sticky left-0 z-20 bg-white dark:bg-gray-800 border-r-2 border-gray-300 dark:border-gray-600">
+            <div className={`${isCompact ? 'p-2 h-8' : 'p-3 h-12'} font-semibold text-gray-800 dark:text-white text-center bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 border-b-2 border-blue-200 dark:border-blue-700`}>🕐 Hora</div>
+            <div className="bg-gradient-to-b from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700">
               {hours.map((hour) => (
-                <div key={hour} className={`${isCompact ? 'p-1 h-12' : 'p-2 h-16'} text-center text-gray-700 border-b border-gray-200 flex items-center justify-center bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-blue-100 transition-colors`}>
+                <div key={hour} className={`${isCompact ? 'p-1 h-12' : 'p-2 h-16'} text-center text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-600 flex items-center justify-center bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 hover:from-blue-50 hover:to-blue-100 dark:hover:from-blue-900/50 dark:hover:to-blue-800/50 transition-colors`}>
                   <span className={`${isCompact ? 'text-xs' : 'text-sm'} font-semibold`}>{formatTimeAMPM(hour)}</span>
                 </div>
               ))}
@@ -75,12 +75,12 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ schedule, isComp
           <div className="flex flex-row">
             {days.map((day) => (
               <div key={day} className="flex-shrink-0 w-48 border-r border-gray-300">
-                <div className={`${isCompact ? 'p-2 h-8' : 'p-3 h-12'} font-semibold text-gray-800 text-center bg-gradient-to-r from-blue-100 to-indigo-100 border-b-2 border-blue-200`}>{isCompact ? day.slice(0, 3).toUpperCase() : day}</div>
+                <div className={`${isCompact ? 'p-2 h-8' : 'p-3 h-12'} font-semibold text-gray-800 dark:text-white text-center bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900 dark:to-indigo-900 border-b-2 border-blue-200 dark:border-blue-700`}>{isCompact ? day.slice(0, 3).toUpperCase() : day}</div>
 
                 {/* Time Slots */}
                 <div className="relative">
                   {hours.map((hour) => (
-                    <div key={hour} className={`${isCompact ? 'h-12' : 'h-16'} border-b border-gray-200 relative hover:bg-blue-50 transition-colors`}>
+                    <div key={hour} className={`${isCompact ? 'h-12' : 'h-16'} border-b border-gray-200 dark:border-gray-600 relative hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors`}>
                       {/* Render classes that start in this hour */}
                       {getClassesForDayAndHour(day, hour).map((classInfo, index) => {
                         const duration = timeToMinutes(classInfo.slot.endTime) - timeToMinutes(classInfo.slot.startTime);
