@@ -56,7 +56,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ schedule, isComp
   };
 
   return (
-    <div className={`bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden ${isCompact ? 'text-xs' : ''}`}>
+    <div id={`${schedule.id}`} className={`bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden ${isCompact ? 'text-xs' : ''}`}>
       <div className="overflow-x-auto">
         <div className="inline-flex min-w-full">
           {/* Time Column - Sticky */}
