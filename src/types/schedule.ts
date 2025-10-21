@@ -41,3 +41,30 @@ export interface FormData {
   subjects: Subject[];
   preferences: UserPreferences;
 }
+
+export interface PersonalEvent {
+  id: string;
+  title: string;
+  description?: string;
+  timeSlots: TimeSlot[];
+  color: string;
+  category?: string;
+}
+
+export interface PersonalCalendar {
+  id: string;
+  name: string;
+  description?: string;
+  events: PersonalEvent[];
+  color: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface MergedCalendar {
+  id: string;
+  name: string;
+  academicSchedule?: Schedule;
+  personalCalendars: PersonalCalendar[];
+  createdAt: Date;
+}
