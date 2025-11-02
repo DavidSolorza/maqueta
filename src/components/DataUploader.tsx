@@ -331,19 +331,22 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 mb-6">
+      <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 mb-6 dark:bg-[#102038] dark:text-white dark:border-white">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-gray-900">Configurar Materias</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Configurar Materias</h2>
           <div className="flex space-x-3">
-            <button onClick={handleUseSampleData} className="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">
+            <button onClick={handleUseSampleData} className="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors 
+             dark:bg-transparent dark:border dark:border-green-500 dark:text-green-400 dark:hover:bg-green-500/10">
               <FileText className="w-4 h-4" />
               <span>Usar datos de ejemplo</span>
             </button>
-            <button onClick={() => setShowManualForm(!showManualForm)} className="flex items-center space-x-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+            <button onClick={() => setShowManualForm(!showManualForm)} className="flex items-center space-x-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors 
+             dark:bg-transparent dark:border dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-500/10">
               <Plus className="w-4 h-4" />
               <span>Agregar materia</span>
             </button>
-            <button onClick={() => setShowTextInput(!showTextInput)} className="flex items-center space-x-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors">
+            <button onClick={() => setShowTextInput(!showTextInput)} className="flex items-center space-x-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors 
+             dark:bg-transparent dark:border dark:border-purple-500 dark:text-purple-400 dark:hover:bg-purple-500/10">
               <Type className="w-4 h-4" />
               <span>Escribir por texto</span>
             </button>
@@ -351,21 +354,51 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
         </div>
 
         {/* Target Subject Count */}
-        <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200">
+        <div className="bg-blue-50 dark:bg-transparent rounded-lg p-4 mb-6 border border-blue-200 dark:border-blue-400">
           <div className="flex items-center space-x-3 mb-3">
-            <Target className="w-5 h-5 text-blue-600" />
-            <h3 className="font-medium text-blue-900">Número específico de materias (opcional)</h3>
+            <Target className="w-5 h-5 text-blue-600 dark:text-blue-300" />
+            <h3 className="font-medium text-blue-900 dark:text-blue-200">
+              Número específico de materias (opcional)
+            </h3>
           </div>
+
           <div className="flex items-center space-x-4">
             <label className="flex items-center space-x-2">
-              <input type="checkbox" checked={targetSubjectCount !== undefined} onChange={(e) => setTargetSubjectCount(e.target.checked ? 4 : undefined)} className="rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
-              <span className="text-blue-800">Generar horarios con exactamente</span>
+              <input
+                type="checkbox"
+                checked={targetSubjectCount !== undefined}
+                onChange={(e) =>
+                  setTargetSubjectCount(e.target.checked ? 4 : undefined)
+                }
+                className="rounded border-blue-300 text-blue-600 focus:ring-blue-500 dark:border-blue-500 dark:text-blue-400 dark:focus:ring-blue-400"
+              />
+              <span className="text-blue-800 dark:text-blue-200">
+                Generar horarios con exactamente
+              </span>
             </label>
-            {targetSubjectCount !== undefined && <input type="number" value={targetSubjectCount} onChange={(e) => setTargetSubjectCount(parseInt(e.target.value) || 1)} min="1" max={subjects.length} className="w-20 px-2 py-1 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />}
-            <span className="text-blue-800">materias</span>
+
+            {targetSubjectCount !== undefined && (
+              <input
+                type="number"
+                value={targetSubjectCount}
+                onChange={(e) =>
+                  setTargetSubjectCount(parseInt(e.target.value) || 1)
+                }
+                min="1"
+                max={subjects.length}
+                className="w-20 px-2 py-1 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500
+                   dark:border-blue-500 dark:bg-transparent dark:text-blue-100 dark:focus:ring-blue-400"
+              />
+            )}
+
+            <span className="text-blue-800 dark:text-blue-200">materias</span>
           </div>
-          <p className="text-sm text-blue-700 mt-2">Si no seleccionas esta opción, se generarán horarios con todas las combinaciones posibles (excluyendo horarios de una sola materia).</p>
-        </div>
+
+  <p className="text-sm text-blue-700 dark:text-blue-300 mt-2">
+    Si no seleccionas esta opción, se generarán horarios con todas las combinaciones posibles
+    (excluyendo horarios de una sola materia).
+  </p>
+</div>
 
         {showTextInput && (
           <div className="mb-6 bg-purple-50 rounded-lg p-6 border border-purple-200">
@@ -418,7 +451,7 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
         )}
 
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-900">Materias registradas ({subjects.length})</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Materias registradas ({subjects.length})</h3>
           {subjects.length > 5 && (
             <button onClick={() => setShowAllSubjects(!showAllSubjects)} className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors">
               {showAllSubjects ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -531,8 +564,8 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
           ) : (
             <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
               <Upload className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No hay materias registradas</h3>
-              <p className="text-gray-600 mb-6">Usa los datos de ejemplo o agrega materias manualmente</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2 dark:text-white">No hay materias registradas</h3>
+              <p className="text-gray-600 mb-6 dark:text-white ">Usa los datos de ejemplo o agrega materias manualmente</p>
             </div>
           )}
         </div>
