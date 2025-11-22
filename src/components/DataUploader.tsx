@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Subject } from '../types/schedule';
 import { ScheduleGenerator } from '../utils/scheduleGenerator';
-import { Upload, FileText, Plus, Trash2, Calendar, User, Clock, Type, Info, AlertTriangle, Eye, EyeOff, Target, BookOpen } from 'lucide-react';
+import { CreateSubjectModal } from './CreateSubjectModal';
+import { ConfirmModal } from './ConfirmModal';
+import { toastManager } from '../utils/toast';
+import { Upload, FileText, Plus, Trash2, Edit, Type, Info, AlertTriangle, Eye, EyeOff, Target, BookOpen } from 'lucide-react';
 
 interface DataUploaderProps {
   onDataSubmit: (subjects: Subject[], targetCount?: number) => void;
@@ -81,12 +84,17 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
     const saved = localStorage.getItem('university-schedule-subjects');
     return saved ? JSON.parse(saved) : [];
   });
-  const [showManualForm, setShowManualForm] = useState(false);
+  const [showSubjectModal, setShowSubjectModal] = useState(false);
+  const [subjectToEdit, setSubjectToEdit] = useState<Subject | null>(null);
   const [showTextInput, setShowTextInput] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [targetSubjectCount, setTargetSubjectCount] = useState<number | undefined>(undefined);
   const [showAllSubjects, setShowAllSubjects] = useState(true);
   const [conflicts, setConflicts] = useState<string[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [subjectToDelete, setSubjectToDelete] = useState<string | null>(null);
+  const [showTextInputConfirm, setShowTextInputConfirm] = useState(false);
+  const [pendingTextInput, setPendingTextInput] = useState<string>('');
 
   React.useEffect(() => {
     localStorage.setItem('university-schedule-subjects', JSON.stringify(subjects));
@@ -97,7 +105,7 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
     const isDuplicate = subjects.some((s) => s.code.toLowerCase() === newSubject.code.toLowerCase() || (s.name.toLowerCase() === newSubject.name.toLowerCase() && s.code !== newSubject.code));
 
     if (isDuplicate) {
-      alert(`⚠️ MATERIA DUPLICADA\n\nLa materia ${newSubject.code} - ${newSubject.name} ya está registrada.\n\nNo se agregará para evitar duplicados.`);
+      toastManager.warning(`La materia ${newSubject.code} - ${newSubject.name} ya está registrada. No se agregará para evitar duplicados.`);
       return false;
     }
 
@@ -107,10 +115,8 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
 
     if (conflictMessages.length > 0) {
       setConflicts(conflictMessages);
-      const proceed = window.confirm(`🚨 CONFLICTO DE HORARIOS DETECTADO\n\n${conflictMessages.join('\n\n')}\n\n⚠️ ADVERTENCIA: Esta materia generará choques de horarios y puede limitar las combinaciones válidas.\n\n¿Deseas agregar la materia de todas formas?`);
-      if (!proceed) {
-        return false;
-      }
+      // Note: Conflicts are now handled in CreateSubjectModal
+      return true; // Allow adding with conflicts, user will be warned in modal
     }
 
     setConflicts([]);
@@ -132,59 +138,62 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
 
   const handleSubmit = () => {
     if (subjects.length === 0) {
-      alert('Por favor agrega al menos una materia');
+      toastManager.warning('Por favor agrega al menos una materia');
       return;
     }
 
     if (targetSubjectCount && targetSubjectCount > subjects.length) {
-      alert(`No puedes generar horarios con ${targetSubjectCount} materias cuando solo tienes ${subjects.length} registradas.`);
+      toastManager.error(`No puedes generar horarios con ${targetSubjectCount} materias cuando solo tienes ${subjects.length} registradas.`);
       return;
     }
 
     onDataSubmit(subjects, targetSubjectCount);
   };
 
-  const addNewSubject = () => {
-    const newSubject: Subject = {
-      id: Date.now().toString(),
-      name: '',
-      code: '',
-      credits: 3,
-      professors: [{ id: 'prof1', name: '', rating: 0 }],
-      timeSlots: [{ day: 'Lunes', startTime: '08:00', endTime: '10:00' }],
-      color: `#${Math.floor(Math.random() * 16777215).toString(16)}`,
-    };
-    setSubjects([...subjects, newSubject]);
+  const handleCreateSubject = () => {
+    setSubjectToEdit(null);
+    setShowSubjectModal(true);
   };
 
-  const updateSubject = (index: number, field: string, value: any) => {
-    const updated = [...subjects];
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.');
-      if (parent === 'professors') {
-        updated[index].professors[0] = {
-          ...updated[index].professors[0],
-          [child]: value,
-        };
-      }
+  const handleEditSubject = (subject: Subject) => {
+    setSubjectToEdit(subject);
+    setShowSubjectModal(true);
+  };
+
+  const handleSaveSubject = (subjectData: Omit<Subject, 'id'>) => {
+    if (subjectToEdit) {
+      // Edit existing subject
+      const updated: Subject = {
+        ...subjectToEdit,
+        ...subjectData,
+      };
+      setSubjects(subjects.map((s) => (s.id === subjectToEdit.id ? updated : s)));
     } else {
-      (updated[index] as any)[field] = value;
+      // Create new subject
+      const newSubject: Subject = {
+        id: Date.now().toString(),
+        ...subjectData,
+      };
+      setSubjects([...subjects, newSubject]);
     }
-
-    // Validate on update
-    if (field === 'code' || field === 'name') {
-      const otherSubjects = updated.filter((_, i) => i !== index);
-      const generator = new ScheduleGenerator([]);
-      const conflictMessages = generator.checkSubjectConflicts(updated[index], otherSubjects);
-      setConflicts(conflictMessages);
-    }
-
-    setSubjects(updated);
+    setShowSubjectModal(false);
+    setSubjectToEdit(null);
+    setConflicts([]);
   };
 
-  const removeSubject = (index: number) => {
-    setSubjects(subjects.filter((_, i) => i !== index));
-    setConflicts([]); // Clear conflicts when removing subjects
+  const handleDeleteSubject = (subjectId: string) => {
+    setSubjectToDelete(subjectId);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteSubject = () => {
+    if (subjectToDelete) {
+      setSubjects(subjects.filter((s) => s.id !== subjectToDelete));
+      setConflicts([]);
+      toastManager.success('Materia eliminada correctamente');
+      setSubjectToDelete(null);
+    }
+    setShowDeleteConfirm(false);
   };
 
   const parseTextInput = () => {
@@ -251,61 +260,38 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
       });
 
       // Show summary of processing
-      let message = `✅ PROCESAMIENTO COMPLETADO\n\n`;
-      message += `• ${parsedSubjects.length} materias agregadas exitosamente\n`;
-
-      if (duplicateSubjects.length > 0) {
-        message += `• ${duplicateSubjects.length} materias duplicadas omitidas:\n`;
-        duplicateSubjects.forEach((dup) => (message += `  - ${dup}\n`));
-      }
-
-      if (conflictSubjects.length > 0) {
-        message += `• ${conflictSubjects.length} materias con conflictos omitidas:\n`;
-        conflictSubjects.forEach((conf) => (message += `  - ${conf}\n`));
+      if (parsedSubjects.length > 0) {
+        let message = `✅ ${parsedSubjects.length} materia${parsedSubjects.length !== 1 ? 's' : ''} agregada${parsedSubjects.length !== 1 ? 's' : ''} exitosamente`;
+        
+        if (duplicateSubjects.length > 0 || conflictSubjects.length > 0) {
+          message += `\n\n⚠️ ${duplicateSubjects.length + conflictSubjects.length} materia${duplicateSubjects.length + conflictSubjects.length !== 1 ? 's' : ''} omitida${duplicateSubjects.length + conflictSubjects.length !== 1 ? 's' : ''}`;
+        }
+        
+        toastManager.success(message);
+      } else {
+        toastManager.warning('No se agregaron materias. Verifica el formato y que no haya duplicados.');
       }
 
       if (duplicateSubjects.length > 0 || conflictSubjects.length > 0) {
-        message += `\n⚠️ Las materias omitidas no afectarán la generación de horarios.`;
+        const details = [];
+        if (duplicateSubjects.length > 0) {
+          details.push(`${duplicateSubjects.length} duplicada${duplicateSubjects.length !== 1 ? 's' : ''}`);
+        }
+        if (conflictSubjects.length > 0) {
+          details.push(`${conflictSubjects.length} con conflicto${conflictSubjects.length !== 1 ? 's' : ''}`);
+        }
+        toastManager.info(`Las materias omitidas (${details.join(', ')}) no afectarán la generación de horarios.`);
       }
 
-      alert(message);
       setSubjects([...subjects, ...parsedSubjects]);
       setTextInput('');
       setShowTextInput(false);
       setConflicts([]);
     } catch (error) {
-      alert(`🚨 ERROR AL PROCESAR TEXTO\n\n${(error as Error).message}\n\nPor favor revisa el formato y vuelve a intentar.`);
+      toastManager.error(`Error al procesar texto: ${(error as Error).message}\n\nPor favor revisa el formato y vuelve a intentar.`);
     }
   };
 
-  const addTimeSlot = (subjectIndex: number) => {
-    const updated = [...subjects];
-    updated[subjectIndex].timeSlots.push({
-      day: 'Lunes',
-      startTime: '08:00',
-      endTime: '10:00',
-    });
-    setSubjects(updated);
-  };
-
-  const updateTimeSlot = (subjectIndex: number, slotIndex: number, field: string, value: string) => {
-    const updated = [...subjects];
-    (updated[subjectIndex].timeSlots[slotIndex] as any)[field] = value;
-
-    // Validate time slot changes
-    const generator = new ScheduleGenerator([]);
-    const otherSubjects = updated.filter((_, i) => i !== subjectIndex);
-    const conflictMessages = generator.checkSubjectConflicts(updated[subjectIndex], otherSubjects);
-    setConflicts(conflictMessages);
-
-    setSubjects(updated);
-  };
-
-  const removeTimeSlot = (subjectIndex: number, slotIndex: number) => {
-    const updated = [...subjects];
-    updated[subjectIndex].timeSlots = updated[subjectIndex].timeSlots.filter((_, i) => i !== slotIndex);
-    setSubjects(updated);
-  };
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -331,19 +317,19 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-gray-900">Configurar Materias</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Configurar Materias</h2>
           <div className="flex space-x-3">
-            <button onClick={handleUseSampleData} className="flex items-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">
+            <button onClick={handleUseSampleData} className="flex items-center space-x-2 px-4 py-2 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/70 transition-colors shadow-sm hover:shadow-md">
               <FileText className="w-4 h-4" />
               <span>Usar datos de ejemplo</span>
             </button>
-            <button onClick={() => setShowManualForm(!showManualForm)} className="flex items-center space-x-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+            <button onClick={handleCreateSubject} className="flex items-center space-x-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/70 transition-colors shadow-sm hover:shadow-md">
               <Plus className="w-4 h-4" />
               <span>Agregar materia</span>
             </button>
-            <button onClick={() => setShowTextInput(!showTextInput)} className="flex items-center space-x-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors">
+            <button onClick={() => setShowTextInput(!showTextInput)} className="flex items-center space-x-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/70 transition-colors shadow-sm hover:shadow-md">
               <Type className="w-4 h-4" />
               <span>Escribir por texto</span>
             </button>
@@ -351,29 +337,29 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
         </div>
 
         {/* Target Subject Count */}
-        <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200">
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6 border border-blue-200 dark:border-blue-800">
           <div className="flex items-center space-x-3 mb-3">
-            <Target className="w-5 h-5 text-blue-600" />
-            <h3 className="font-medium text-blue-900">Número específico de materias (opcional)</h3>
+            <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h3 className="font-medium text-blue-900 dark:text-blue-300">Número específico de materias (opcional)</h3>
           </div>
           <div className="flex items-center space-x-4">
             <label className="flex items-center space-x-2">
-              <input type="checkbox" checked={targetSubjectCount !== undefined} onChange={(e) => setTargetSubjectCount(e.target.checked ? 4 : undefined)} className="rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
-              <span className="text-blue-800">Generar horarios con exactamente</span>
+              <input type="checkbox" checked={targetSubjectCount !== undefined} onChange={(e) => setTargetSubjectCount(e.target.checked ? 4 : undefined)} className="rounded border-blue-300 dark:border-blue-600 text-blue-600 dark:text-blue-400 focus:ring-blue-500 bg-white dark:bg-gray-700" />
+              <span className="text-blue-800 dark:text-blue-200">Generar horarios con exactamente</span>
             </label>
-            {targetSubjectCount !== undefined && <input type="number" value={targetSubjectCount} onChange={(e) => setTargetSubjectCount(parseInt(e.target.value) || 1)} min="1" max={subjects.length} className="w-20 px-2 py-1 border border-blue-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />}
-            <span className="text-blue-800">materias</span>
+            {targetSubjectCount !== undefined && <input type="number" value={targetSubjectCount} onChange={(e) => setTargetSubjectCount(parseInt(e.target.value) || 1)} min="1" max={subjects.length} className="w-20 px-2 py-1 border border-blue-300 dark:border-blue-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />}
+            <span className="text-blue-800 dark:text-blue-200">materias</span>
           </div>
-          <p className="text-sm text-blue-700 mt-2">Si no seleccionas esta opción, se generarán horarios con todas las combinaciones posibles (excluyendo horarios de una sola materia).</p>
+          <p className="text-sm text-blue-700 dark:text-blue-300 mt-2">Si no seleccionas esta opción, se generarán horarios con todas las combinaciones posibles (excluyendo horarios de una sola materia).</p>
         </div>
 
         {showTextInput && (
-          <div className="mb-6 bg-purple-50 rounded-lg p-6 border border-purple-200">
+          <div className="mb-6 bg-purple-50 dark:bg-purple-900/20 rounded-lg p-6 border border-purple-200 dark:border-purple-800">
             <div className="flex items-start space-x-3 mb-4">
-              <Info className="w-5 h-5 text-purple-600 mt-0.5" />
+              <Info className="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5" />
               <div>
-                <h3 className="font-medium text-purple-900 mb-2">Formato de entrada de texto</h3>
-                <div className="text-sm text-purple-800 space-y-1">
+                <h3 className="font-medium text-purple-900 dark:text-purple-300 mb-2">Formato de entrada de texto</h3>
+                <div className="text-sm text-purple-800 dark:text-purple-200 space-y-1">
                   <p>
                     <strong>Formato:</strong> Código | Nombre | Créditos | Horario1 | Horario2 | ...
                   </p>
@@ -387,9 +373,9 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
                     <strong>Nota:</strong> Se detectarán automáticamente duplicados y conflictos
                   </p>
                 </div>
-                <div className="mt-3 p-3 bg-white rounded border border-purple-200">
-                  <p className="text-xs font-medium text-purple-900 mb-1">Ejemplo:</p>
-                  <code className="text-xs text-purple-800 block">
+                <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded border border-purple-200 dark:border-purple-700">
+                  <p className="text-xs font-medium text-purple-900 dark:text-purple-300 mb-1">Ejemplo:</p>
+                  <code className="text-xs text-purple-800 dark:text-purple-200 block">
                     MAT101 | Cálculo Diferencial | 4 | Lunes 08:00-10:00 | Miércoles 08:00-10:00
                     <br />
                     CS101 | Programación I | 3 | Martes 10:00-12:00 | Jueves 10:00-12:00
@@ -398,7 +384,7 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
               </div>
             </div>
 
-            <textarea value={textInput} onChange={(e) => setTextInput(e.target.value)} className="w-full h-32 px-3 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm" placeholder="Escribe las materias aquí siguiendo el formato especificado..." />
+            <textarea value={textInput} onChange={(e) => setTextInput(e.target.value)} className="w-full h-32 px-3 py-2 border border-purple-300 dark:border-purple-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 font-mono text-sm" placeholder="Escribe las materias aquí siguiendo el formato especificado..." />
 
             <div className="flex justify-end space-x-3 mt-4">
               <button
@@ -406,11 +392,11 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
                   setShowTextInput(false);
                   setTextInput('');
                 }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 transition-colors"
               >
                 Cancelar
               </button>
-              <button onClick={parseTextInput} disabled={!textInput.trim()} className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors">
+              <button onClick={parseTextInput} disabled={!textInput.trim()} className="px-4 py-2 bg-purple-600 dark:bg-purple-700 text-white rounded-md hover:bg-purple-700 dark:hover:bg-purple-800 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors">
                 Procesar texto
               </button>
             </div>
@@ -418,9 +404,9 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
         )}
 
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-medium text-gray-900">Materias registradas ({subjects.length})</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">Materias registradas ({subjects.length})</h3>
           {subjects.length > 5 && (
-            <button onClick={() => setShowAllSubjects(!showAllSubjects)} className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors">
+            <button onClick={() => setShowAllSubjects(!showAllSubjects)} className="flex items-center space-x-2 px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 transition-colors">
               {showAllSubjects ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               <span>{showAllSubjects ? 'Ocultar algunas' : 'Mostrar todas'}</span>
             </button>
@@ -430,31 +416,63 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
         <div className="mb-6">
           {subjects.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-5">
-              {(showAllSubjects ? subjects : subjects.slice(0, 6)).map((subject, index) => (
-                <div key={subject.id} className="border border-gray-200 rounded-xl p-2 bg-gradient-to-br from-white to-gray-50 hover:shadow-lg transition-all duration-200 hover:border-blue-300">
+              {(showAllSubjects ? subjects : subjects.slice(0, 6)).map((subject) => (
+                <div
+                  key={subject.id}
+                  className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-white dark:bg-gray-800 hover:shadow-lg transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-600 cursor-pointer"
+                  onClick={() => handleEditSubject(subject)}
+                >
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-5 h-5 rounded-full border-2 border-white shadow-md flex-shrink-0" style={{ backgroundColor: subject.color }} />
-                      <div>
-                        <span className="font-medium text-gray-900 block">{subject.code || 'Sin código'}</span>
-                        <span className="text-sm text-gray-600 line-clamp-1" title={subject.name}>
+                    <div className="flex items-center space-x-3 flex-1">
+                      <div
+                        className="w-6 h-6 rounded-full border-2 border-white dark:border-gray-800 shadow-md flex-shrink-0"
+                        style={{ backgroundColor: subject.color }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-semibold text-gray-900 dark:text-white">
+                            {subject.code || 'Sin código'}
+                          </span>
+                          <span className="px-2 py-0.5 text-xs font-medium text-blue-800 dark:text-blue-200 bg-blue-100 dark:bg-blue-900/50 rounded-full">
+                            {subject.credits}c
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-1" title={subject.name}>
                           {subject.name || 'Sin nombre'}
-                        </span>
+                        </p>
                       </div>
                     </div>
-                    <button onClick={() => removeSubject(index)} className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors" title="Eliminar materia">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditSubject(subject);
+                        }}
+                        className="p-1.5 text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        title="Editar materia"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSubject(subject.id);
+                        }}
+                        className="p-1.5 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Eliminar materia"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Subject Stats */}
-                  <div className="flex items-center justify-between mb-3 text-xs text-gray-500">
+                  <div className="flex items-center justify-between mb-3 text-xs text-gray-500 dark:text-gray-400">
                     <div className="flex items-center space-x-1">
                       <BookOpen className="w-3 h-3" />
                       <span>{subject.credits} créditos</span>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <Clock className="w-3 h-3" />
                       <span>
                         {subject.timeSlots.length} horario
                         {subject.timeSlots.length !== 1 ? 's' : ''}
@@ -462,99 +480,114 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
                     </div>
                   </div>
 
-                  {showManualForm && (
-                    <div className="space-y-3 mb-4">
-                      <div className="grid gap-2 grid-cols-2">
-                        <input type="text" value={subject.code} onChange={(e) => updateSubject(index, 'code', e.target.value)} className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Código" />
-                        <input type="number" value={subject.credits} onChange={(e) => updateSubject(index, 'credits', parseInt(e.target.value) || 0)} className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" min="1" max="6" placeholder="Créditos" />
-                      </div>
-                      <input type="text" value={subject.name} onChange={(e) => updateSubject(index, 'name', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Nombre de la materia" />
-                      <input type="text" value={subject.professors[0]?.name || ''} onChange={(e) => updateSubject(index, 'professors.name', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Profesor" />
+                  {/* Professor Info */}
+                  {subject.professors[0]?.name && (
+                    <div className="mb-3 text-xs text-gray-600 dark:text-gray-400">
+                      <span className="font-medium">Prof:</span> {subject.professors[0].name}
+                      {subject.professors[0].rating && (
+                        <span className="ml-1">⭐ {subject.professors[0].rating}</span>
+                      )}
                     </div>
                   )}
 
+                  {/* Time Slots */}
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-gray-700 flex items-center space-x-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>Horarios</span>
-                      </span>
-                      {showManualForm && (
-                        <button onClick={() => addTimeSlot(index)} className="text-xs text-blue-600 hover:text-blue-800 transition-colors font-medium">
-                          + Agregar
-                        </button>
-                      )}
-                    </div>
                     <div className="space-y-2">
-                      {subject.timeSlots.map((slot, slotIndex) => (
-                        <div key={slotIndex} className="text-xs">
-                          {showManualForm ? (
-                            <div className="flex items-center space-x-2">
-                              <select value={slot.day} onChange={(e) => updateTimeSlot(index, slotIndex, 'day', e.target.value)} className="px-2 py-1 border border-gray-300 rounded text-xs flex-1 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                <option value="Lunes">Lun</option>
-                                <option value="Martes">Mar</option>
-                                <option value="Miércoles">Mié</option>
-                                <option value="Jueves">Jue</option>
-                                <option value="Viernes">Vie</option>
-                              </select>
-                              <input type="time" value={slot.startTime} onChange={(e) => updateTimeSlot(index, slotIndex, 'startTime', e.target.value)} className="px-2 py-1 border border-gray-300 rounded text-xs w-20 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                              <span>-</span>
-                              <input type="time" value={slot.endTime} onChange={(e) => updateTimeSlot(index, slotIndex, 'endTime', e.target.value)} className="px-2 py-1 border border-gray-300 rounded text-xs w-20 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                              <button onClick={() => removeTimeSlot(index, slotIndex)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors">
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-gray-200 hover:border-blue-300 transition-colors">
-                              <div className="flex items-center space-x-2">
-                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: subject.color }} />
-                                <span className="text-gray-700 font-medium">{slot.day.slice(0, 3)}</span>
-                              </div>
-                              <span className="text-gray-600 font-mono text-xs">
-                                {slot.startTime} - {slot.endTime}
-                              </span>
-                            </div>
-                          )}
+                      {subject.timeSlots.slice(0, 3).map((slot, slotIndex) => (
+                        <div
+                          key={slotIndex}
+                          className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 border border-gray-200 dark:border-gray-600"
+                        >
+                          <div className="flex items-center space-x-2">
+                            <div
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: subject.color }}
+                            />
+                            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                              {slot.day.slice(0, 3)}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-600 dark:text-gray-400 font-mono">
+                            {slot.startTime} - {slot.endTime}
+                          </span>
                         </div>
                       ))}
+                      {subject.timeSlots.length > 3 && (
+                        <div className="text-xs text-center text-gray-500 dark:text-gray-400 py-1">
+                          +{subject.timeSlots.length - 3} horario{subject.timeSlots.length - 3 !== 1 ? 's' : ''} más
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               ))}
 
               {!showAllSubjects && subjects.length > 6 && (
-                <div className="border border-gray-200 rounded-xl p-4 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center hover:shadow-md transition-all duration-200">
-                  <span className="text-gray-600 font-medium">+{subjects.length - 6} materias más</span>
+                <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-4 bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:shadow-md transition-all duration-200">
+                  <span className="text-gray-600 dark:text-gray-300 font-medium">+{subjects.length - 6} materias más</span>
                 </div>
               )}
             </div>
           ) : (
-            <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg">
-              <Upload className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No hay materias registradas</h3>
-              <p className="text-gray-600 mb-6">Usa los datos de ejemplo o agrega materias manualmente</p>
+            <div className="text-center py-12 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+              <Upload className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No hay materias registradas</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">Usa los datos de ejemplo o agrega materias manualmente</p>
             </div>
           )}
         </div>
 
-        {showManualForm && (
-          <div className="mb-6">
-            <button onClick={addNewSubject} className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors">
-              <Plus className="w-5 h-5 mx-auto mb-1" />
-              Agregar nueva materia
-            </button>
-          </div>
-        )}
-
         {subjects.length > 0 && (
-          <div className="flex justify-center">
-            <button onClick={handleSubmit} disabled={conflicts.length > 0} className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium">
+          <div className="flex flex-col items-center space-y-4">
+            <button
+              onClick={handleCreateSubject}
+              className="w-full max-w-md flex items-center justify-center space-x-2 px-4 py-3 border-2 border-dashed border-blue-300 dark:border-blue-600 rounded-lg text-blue-600 dark:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors font-medium"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Agregar otra materia</span>
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={conflicts.length > 0}
+              className="px-8 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors font-medium shadow-sm hover:shadow-md"
+            >
               Generar Horarios Optimizados
               {targetSubjectCount && ` (${targetSubjectCount} materias)`}
             </button>
           </div>
         )}
       </div>
+
+      {/* Create/Edit Subject Modal */}
+      {showSubjectModal && (
+        <CreateSubjectModal
+          isOpen={showSubjectModal}
+          onClose={() => {
+            setShowSubjectModal(false);
+            setSubjectToEdit(null);
+          }}
+          onSave={handleSaveSubject}
+          subjectToEdit={subjectToEdit}
+          existingSubjects={subjects}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <ConfirmModal
+          isOpen={showDeleteConfirm}
+          title="Eliminar Materia"
+          message="¿Estás seguro de que deseas eliminar esta materia? Esta acción no se puede deshacer."
+          type="danger"
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          onConfirm={confirmDeleteSubject}
+          onCancel={() => {
+            setShowDeleteConfirm(false);
+            setSubjectToDelete(null);
+          }}
+        />
+      )}
     </div>
   );
 }

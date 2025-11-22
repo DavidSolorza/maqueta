@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PersonalCalendar, PersonalEvent, Schedule, TimeSlot } from '../types/schedule';
 import { X, Merge, Calendar, AlertCircle } from 'lucide-react';
 import { WeeklyCalendar } from './WeeklyCalendar';
@@ -16,29 +16,71 @@ export const MergeCalendarsModal: React.FC<MergeCalendarsModalProps> = ({ calend
   const [selectedColor, setSelectedColor] = useState('#4F46E5');
   const [conflicts, setConflicts] = useState<string[]>([]);
 
+  const timeToMinutes = (time: string): number => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
   const checkTimeConflicts = (events: PersonalEvent[]): string[] => {
     const conflictList: string[] = [];
-    const timeSlotMap: { [key: string]: string[] } = {};
+    const processedPairs = new Set<string>();
 
-    events.forEach((event) => {
-      event.timeSlots.forEach((slot) => {
-        const key = `${slot.day}-${slot.startTime}-${slot.endTime}`;
-        if (!timeSlotMap[key]) {
-          timeSlotMap[key] = [];
-        }
-        timeSlotMap[key].push(event.title);
-      });
-    });
+    // Check each pair of events for overlaps
+    for (let i = 0; i < events.length; i++) {
+      for (let j = i + 1; j < events.length; j++) {
+        const event1 = events[i];
+        const event2 = events[j];
 
-    Object.entries(timeSlotMap).forEach(([key, eventTitles]) => {
-      if (eventTitles.length > 1) {
-        const [day, start, end] = key.split('-');
-        conflictList.push(`${day} ${start}-${end}: ${eventTitles.join(', ')}`);
+        // Check all time slots of event1 against all time slots of event2
+        event1.timeSlots.forEach((slot1) => {
+          event2.timeSlots.forEach((slot2) => {
+            // Only check if they're on the same day
+            if (slot1.day === slot2.day) {
+              const start1 = timeToMinutes(slot1.startTime);
+              const end1 = timeToMinutes(slot1.endTime);
+              const start2 = timeToMinutes(slot2.startTime);
+              const end2 = timeToMinutes(slot2.endTime);
+
+              // Check for overlap: (start1 < end2) && (start2 < end1)
+              if (start1 < end2 && start2 < end1) {
+                const pairKey = [event1.title, event2.title].sort().join('|');
+                if (!processedPairs.has(pairKey)) {
+                  processedPairs.add(pairKey);
+                  
+                  // Determine overlap details
+                  const overlapStart = Math.max(start1, start2);
+                  const overlapEnd = Math.min(end1, end2);
+                  const overlapStartStr = `${Math.floor(overlapStart / 60).toString().padStart(2, '0')}:${(overlapStart % 60).toString().padStart(2, '0')}`;
+                  const overlapEndStr = `${Math.floor(overlapEnd / 60).toString().padStart(2, '0')}:${(overlapEnd % 60).toString().padStart(2, '0')}`;
+                  
+                  conflictList.push(
+                    `${slot1.day}: "${event1.title}" (${slot1.startTime}-${slot1.endTime}) se cruza con "${event2.title}" (${slot2.startTime}-${slot2.endTime}) → Solapamiento: ${overlapStartStr}-${overlapEndStr}`
+                  );
+                }
+              }
+            }
+          });
+        });
       }
-    });
+    }
 
     return conflictList;
   };
+
+  useEffect(() => {
+    // Check for conflicts whenever calendars change
+    const allEvents: PersonalEvent[] = [];
+    calendars.forEach((cal) => {
+      cal.events.forEach((event) => {
+        allEvents.push({
+          ...event,
+          id: `merged-${event.id}`,
+        });
+      });
+    });
+    const detectedConflicts = checkTimeConflicts(allEvents);
+    setConflicts(detectedConflicts);
+  }, [calendars]);
 
   const handleMerge = () => {
     const allEvents: PersonalEvent[] = [];
@@ -51,13 +93,6 @@ export const MergeCalendarsModal: React.FC<MergeCalendarsModalProps> = ({ calend
         });
       });
     });
-
-    const detectedConflicts = checkTimeConflicts(allEvents);
-
-    if (detectedConflicts.length > 0) {
-      setConflicts(detectedConflicts);
-      return;
-    }
 
     const merged: PersonalCalendar = {
       id: `merged-${Date.now()}`,
@@ -93,7 +128,7 @@ export const MergeCalendarsModal: React.FC<MergeCalendarsModalProps> = ({ calend
             <div className="space-y-2">
               {calendars.map((cal) => (
                 <div key={cal.id} className="flex items-center space-x-3">
-                  <div className="w-4 h-4 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: cal.color }} />
+                  <div className="w-4 h-4 rounded-full border-2 border-white dark:border-gray-800 shadow-sm" style={{ backgroundColor: cal.color }} />
                   <span className="text-blue-800 dark:text-blue-200 font-medium">{cal.name}</span>
                   <span className="text-blue-600 dark:text-blue-400 text-sm">({cal.events.length} eventos)</span>
                 </div>
@@ -106,18 +141,40 @@ export const MergeCalendarsModal: React.FC<MergeCalendarsModalProps> = ({ calend
             </div>
           </div>
 
-          {conflicts.length > 0 && (
+          {conflicts.length > 0 ? (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
               <div className="flex items-start space-x-3">
-                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <h3 className="font-medium text-red-900 dark:text-red-300 mb-2">Conflictos de horario detectados</h3>
-                  <ul className="space-y-1 text-sm text-red-800 dark:text-red-200">
-                    {conflicts.map((conflict, idx) => (
-                      <li key={idx}>• {conflict}</li>
-                    ))}
-                  </ul>
-                  <p className="mt-3 text-sm text-red-700 dark:text-red-300">Por favor, edita los calendarios para resolver estos conflictos antes de fusionar.</p>
+                  <h3 className="font-medium text-red-900 dark:text-red-300 mb-2">⚠️ Conflictos de horario detectados</h3>
+                  <p className="text-sm text-red-700 dark:text-red-300 mb-3">
+                    Se encontraron {conflicts.length} conflicto{conflicts.length !== 1 ? 's' : ''} de horario entre los eventos de los calendarios seleccionados.
+                  </p>
+                  <div className="bg-white dark:bg-gray-800 rounded-md p-3 border border-red-200 dark:border-red-700 max-h-60 overflow-y-auto">
+                    <ul className="space-y-2 text-sm text-red-800 dark:text-red-200">
+                      {conflicts.map((conflict, idx) => (
+                        <li key={idx} className="flex items-start space-x-2">
+                          <span className="text-red-500 dark:text-red-400 mt-0.5">•</span>
+                          <span className="flex-1">{conflict}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <p className="mt-3 text-sm text-red-700 dark:text-red-300 font-medium">
+                    Puedes fusionar de todas formas, pero los eventos con conflictos aparecerán superpuestos en el calendario.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="font-medium text-green-900 dark:text-green-300 mb-1">✅ Sin conflictos de horario</h3>
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    No se detectaron conflictos de horario entre los eventos de los calendarios seleccionados. Puedes fusionar sin problemas.
+                  </p>
                 </div>
               </div>
             </div>
@@ -172,9 +229,17 @@ export const MergeCalendarsModal: React.FC<MergeCalendarsModalProps> = ({ calend
           <button onClick={onClose} className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             Cancelar
           </button>
-          <button onClick={handleMerge} disabled={conflicts.length > 0 || !mergedName} className="px-4 py-2 text-white bg-blue-600 dark:bg-blue-700 rounded-md hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2">
+          <button 
+            onClick={handleMerge} 
+            disabled={!mergedName} 
+            className={`px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 ${
+              conflicts.length > 0 
+                ? 'bg-yellow-600 dark:bg-yellow-700 hover:bg-yellow-700 dark:hover:bg-yellow-800' 
+                : 'bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-800'
+            }`}
+          >
             <Merge className="w-4 h-4" />
-            <span>Fusionar Calendarios</span>
+            <span>{conflicts.length > 0 ? 'Fusionar de todas formas' : 'Fusionar Calendarios'}</span>
           </button>
         </div>
       </div>
