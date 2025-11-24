@@ -68,3 +68,17 @@ export interface MergedCalendar {
   personalCalendars: PersonalCalendar[];
   createdAt: Date;
 }
+
+export interface Review {
+  id: string;
+  type: 'professor' | 'subject' | 'general';
+  targetName: string; // Nombre del profesor, materia o título general
+  targetCode?: string; // Código de la materia (si aplica)
+  rating: number; // 1-5
+  title: string;
+  content: string;
+  author?: string; // Nombre del autor (opcional)
+  createdAt: Date;
+  updatedAt: Date;
+  helpful?: number; // Contador de "útil"
+}
