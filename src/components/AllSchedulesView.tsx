@@ -159,7 +159,7 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({ schedules, o
           <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500 dark:text-red-400" />
           <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">No se encontraron horarios válidos</h2>
           <p className="mb-6 text-gray-600 dark:text-gray-300">{targetSubjectCount ? `No es posible crear horarios con exactamente ${targetSubjectCount} materias sin conflictos.` : 'Las materias seleccionadas tienen choques de horarios que impiden crear combinaciones válidas.'}</p>
-          <button onClick={onBack} className="px-6 py-3 text-white transition-colors bg-blue-600 dark:bg-blue-700 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800">
+          <button onClick={onBack} className="px-6 py-3 text-white transition-all duration-300 bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 dark:from-brand-blue-800 dark:to-brand-blue-700 rounded-xl hover:from-brand-blue-800 hover:to-brand-blue-700 dark:hover:from-brand-blue-700 dark:hover:to-brand-blue-600 shadow-lg shadow-brand-blue-900/30 hover:shadow-xl transform hover:scale-105">
             Volver a configurar materias
           </button>
         </div>
@@ -168,19 +168,21 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({ schedules, o
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen">
       <div className="container px-4 py-8 mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-12">
           <div className="flex items-center space-x-4">
-            <button onClick={onBack} className="flex items-center px-3 py-2 space-x-2 text-gray-600 dark:text-gray-400 transition-colors hover:text-gray-900 dark:hover:text-white">
+            <button onClick={onBack} className="flex items-center px-4 py-2 space-x-2 text-gray-700 dark:text-gray-300 transition-all duration-300 hover:text-brand-blue-900 dark:hover:text-brand-blue-400 hover:bg-blue-50 dark:hover:bg-gray-800 rounded-xl transform hover:scale-105">
               <ArrowLeft className="w-5 h-5" />
-              <span>Volver</span>
+              <span className="font-semibold">Volver</span>
             </button>
 
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Horarios Optimizados</h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <h1 className="text-4xl md:text-5xl font-extrabold mb-2 bg-gradient-to-r from-brand-blue-900 via-brand-blue-700 to-brand-orange-500 bg-clip-text text-transparent animate-gradient">
+                Horarios Optimizados
+              </h1>
+              <p className="text-lg text-gray-700 dark:text-gray-300">
                 {filteredSchedules.length} de {schedules.length} horarios válidos • {allSubjects.length} materias registradas
                 {targetSubjectCount && ` • Mostrando horarios con ${targetSubjectCount} materias`}
               </p>
@@ -195,7 +197,7 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({ schedules, o
         </div>
 
         {/* All Subjects Display */}
-        <div className="p-6 mb-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+        <div className="p-6 mb-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl card-hover">
           <h3 className="mb-3 font-medium text-gray-900 dark:text-white">📚 Todas las materias disponibles ({allSubjects.length})</h3>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {allSubjects.map((subject) => (

@@ -3,7 +3,7 @@ import { Review } from '../types/schedule';
 import { CreateReviewModal } from './CreateReviewModal';
 import { ConfirmModal } from './ConfirmModal';
 import { toastManager } from '../utils/toast';
-import { Plus, Star, User, BookOpen, MessageSquare, Edit, Trash2, ThumbsUp, Search, Filter, GraduationCap, Calendar } from 'lucide-react';
+import { Plus, Star, User, BookOpen, MessageSquare, Edit, Trash2, ThumbsUp, Search, Filter, Calendar } from 'lucide-react';
 import { loadReviewsFromLocal, saveReviewsToLocal, deleteReview, markReviewHelpful, generateReviewId } from '../utils/reviewStorage';
 
 interface ReviewsViewProps {
@@ -140,22 +140,17 @@ export const ReviewsView: React.FC<ReviewsViewProps> = ({ onBack }) => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center space-x-4 mb-4">
-          <button
-            onClick={onBack}
-            className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-blue-600 dark:bg-blue-700 text-white hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors duration-200 shadow-sm hover:shadow-md"
-            title="Volver al Optimizador de Horarios Universitarios"
-          >
-            <GraduationCap className="w-5 h-5" />
-            <span className="text-sm font-medium">Optimizador de Horarios</span>
-          </button>
-        </div>
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Reseñas y Opiniones</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">Comparte tu experiencia sobre profesores, materias y más</p>
+      <div className="text-center mb-12 animate-fade-in">
+        <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-brand-blue-900 via-brand-blue-700 to-brand-orange-500 bg-clip-text text-transparent animate-gradient">
+          Reseñas y Opiniones
+        </h1>
+        <p className="text-xl text-gray-700 dark:text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+          Comparte tu experiencia sobre profesores, materias y más.
+          <span className="block mt-2 text-brand-orange-500 font-semibold">Ayuda a otros estudiantes a tomar mejores decisiones</span>
+        </p>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
+      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 p-8 mb-8 card-hover">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Reseñas ({filteredReviews.length})</h2>
           <button
@@ -163,7 +158,7 @@ export const ReviewsView: React.FC<ReviewsViewProps> = ({ onBack }) => {
               setReviewToEdit(null);
               setShowCreateModal(true);
             }}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/70 transition-colors shadow-sm hover:shadow-md"
+            className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white rounded-xl hover:from-brand-blue-800 hover:to-brand-blue-700 dark:from-brand-blue-800 dark:to-brand-blue-700 dark:hover:from-brand-blue-700 dark:hover:to-brand-blue-600 transition-all duration-300 shadow-lg shadow-brand-blue-900/30 hover:shadow-xl hover:shadow-brand-blue-900/40 transform hover:scale-105"
           >
             <Plus className="w-4 h-4" />
             <span>Nueva Reseña</span>
@@ -233,7 +228,7 @@ export const ReviewsView: React.FC<ReviewsViewProps> = ({ onBack }) => {
                   setReviewToEdit(null);
                   setShowCreateModal(true);
                 }}
-                className="inline-flex items-center px-4 py-2 space-x-2 text-white bg-blue-600 dark:bg-blue-700 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors shadow-sm hover:shadow-md"
+                className="inline-flex items-center px-4 py-2 space-x-2 text-white bg-brand-blue-900 dark:bg-brand-blue-800 rounded-lg hover:bg-brand-blue-800 dark:hover:bg-brand-blue-700 transition-colors shadow-sm hover:shadow-md"
               >
                 <Plus className="w-5 h-5" />
                 <span>Crear Primera Reseña</span>
@@ -245,7 +240,7 @@ export const ReviewsView: React.FC<ReviewsViewProps> = ({ onBack }) => {
             {filteredReviews.map((review) => (
               <div
                 key={review.id}
-                className="border border-gray-200 dark:border-gray-700 rounded-xl p-6 bg-white dark:bg-gray-800 hover:shadow-lg transition-all duration-200"
+                className="border border-gray-200/50 dark:border-gray-700/50 rounded-2xl p-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm hover:shadow-2xl transition-all duration-300 card-hover"
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">

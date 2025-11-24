@@ -36,7 +36,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   const buttonStyles = {
     warning: 'bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-700 dark:hover:bg-yellow-800',
     danger: 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800',
-    info: 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800',
+    info: 'bg-brand-blue-900 hover:bg-brand-blue-800 dark:bg-brand-blue-800 dark:hover:bg-brand-blue-700',
     success: 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800',
   };
 
@@ -48,8 +48,16 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full animate-scale-in">
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-start justify-center z-[9999] p-4 pt-32"
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onCancel();
+        }
+      }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-scale-in relative z-[10000]">
         <div className="p-6">
           <div className="flex items-start space-x-4">
             <div className={`flex-shrink-0 p-3 rounded-full ${iconBgStyles[type]}`}>

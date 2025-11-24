@@ -93,6 +93,18 @@ export const CreateSubjectModal: React.FC<CreateSubjectModalProps> = ({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingSave, setPendingSave] = useState(false);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     if (subjectToEdit) {
       setName(subjectToEdit.name);
@@ -243,10 +255,18 @@ export const CreateSubjectModal: React.FC<CreateSubjectModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-start justify-center z-[9999] p-4 pt-[100px]"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col relative z-[10000]">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-white rounded-t-2xl">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -268,8 +288,8 @@ export const CreateSubjectModal: React.FC<CreateSubjectModalProps> = ({
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
+        {/* Content - Scrollable */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
           {/* Templates Section */}
           {!subjectToEdit && (
             <div>
@@ -561,7 +581,7 @@ export const CreateSubjectModal: React.FC<CreateSubjectModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3 bg-gray-50 dark:bg-gray-900/50">
+        <div className="p-6 border-t border-gray-200 flex justify-end space-x-3 bg-gray-50 rounded-b-2xl flex-shrink-0">
           <button
             onClick={onClose}
             className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
@@ -571,7 +591,7 @@ export const CreateSubjectModal: React.FC<CreateSubjectModalProps> = ({
           <button
             onClick={handleSave}
             disabled={!name.trim() || !code.trim() || timeSlots.length === 0}
-            className="px-4 py-2 text-white bg-blue-600 dark:bg-blue-700 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            className="px-4 py-2 text-white bg-brand-blue-900 dark:bg-brand-blue-800 rounded-lg hover:bg-brand-blue-800 dark:hover:bg-brand-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
           >
             <Save className="w-4 h-4" />
             <span>{subjectToEdit ? 'Guardar Cambios' : 'Crear Materia'}</span>

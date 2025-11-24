@@ -67,6 +67,14 @@ export const MergeCalendarsModal: React.FC<MergeCalendarsModalProps> = ({ calend
     return conflictList;
   };
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   useEffect(() => {
     // Check for conflicts whenever calendars change
     const allEvents: PersonalEvent[] = [];
@@ -110,9 +118,17 @@ export const MergeCalendarsModal: React.FC<MergeCalendarsModalProps> = ({ calend
   const totalEvents = calendars.reduce((sum, cal) => sum + cal.events.length, 0);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+    <div 
+      className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-start justify-center z-[9999] p-4 pt-32"
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col relative z-[10000]">
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-white rounded-t-2xl">
           <div className="flex items-center space-x-3">
             <Merge className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Fusionar Calendarios</h2>
@@ -122,7 +138,7 @@ export const MergeCalendarsModal: React.FC<MergeCalendarsModalProps> = ({ calend
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <h3 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Calendarios a fusionar</h3>
             <div className="space-y-2">
@@ -225,7 +241,7 @@ export const MergeCalendarsModal: React.FC<MergeCalendarsModalProps> = ({ calend
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3 bg-gray-50 dark:bg-gray-900/50">
+        <div className="p-6 border-t border-gray-200 flex justify-end space-x-3 bg-gray-50 rounded-b-2xl flex-shrink-0">
           <button onClick={onClose} className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             Cancelar
           </button>
@@ -235,7 +251,7 @@ export const MergeCalendarsModal: React.FC<MergeCalendarsModalProps> = ({ calend
             className={`px-4 py-2 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 ${
               conflicts.length > 0 
                 ? 'bg-yellow-600 dark:bg-yellow-700 hover:bg-yellow-700 dark:hover:bg-yellow-800' 
-                : 'bg-blue-600 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-800'
+                : 'bg-brand-blue-900 dark:bg-brand-blue-800 hover:bg-brand-blue-800 dark:hover:bg-brand-blue-700'
             }`}
           >
             <Merge className="w-4 h-4" />
