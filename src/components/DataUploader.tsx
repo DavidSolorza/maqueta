@@ -347,6 +347,7 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
             <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <h3 className="font-medium text-blue-900 dark:text-blue-300">Número específico de materias (opcional)</h3>
           </div>
+
           <div className="flex items-center space-x-4">
             <label className="flex items-center space-x-2">
               <input type="checkbox" checked={targetSubjectCount !== undefined} onChange={(e) => setTargetSubjectCount(e.target.checked ? 4 : undefined)} className="rounded border-blue-300 dark:border-blue-600 text-blue-600 dark:text-blue-400 focus:ring-blue-500 bg-white dark:bg-gray-700" />
