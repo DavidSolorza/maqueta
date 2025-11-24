@@ -169,26 +169,26 @@ export const PersonalCalendarsView: React.FC<PersonalCalendarsViewProps> = ({ on
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="text-center mb-12 animate-fade-in">
-        <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-brand-blue-900 via-brand-blue-700 to-brand-orange-500 bg-clip-text text-transparent animate-gradient">
+      <div className="text-center mb-8 sm:mb-12 animate-fade-in px-4">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 sm:mb-6 bg-gradient-to-r from-brand-blue-900 via-brand-blue-700 to-brand-orange-500 bg-clip-text text-transparent animate-gradient">
           Calendarios Personales
         </h1>
-        <p className="text-xl text-gray-700 dark:text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-base sm:text-lg md:text-xl text-gray-700 mb-4 sm:mb-8 max-w-2xl mx-auto leading-relaxed px-2">
           Organiza tus eventos personales y crea calendarios personalizados.
           <span className="block mt-2 text-brand-orange-500 font-semibold">Gestiona tu tiempo de forma inteligente</span>
         </p>
       </div>
 
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 p-8 mb-8 card-hover">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Configurar Calendarios</h2>
-          <div className="flex space-x-3">
-                  <button onClick={handleCreateCalendar} className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white rounded-xl hover:from-brand-blue-800 hover:to-brand-blue-700 dark:from-brand-blue-800 dark:to-brand-blue-700 dark:hover:from-brand-blue-700 dark:hover:to-brand-blue-600 transition-all duration-300 shadow-lg shadow-brand-blue-900/30 hover:shadow-xl hover:shadow-brand-blue-900/40 transform hover:scale-105">
-                    <Plus className="w-5 h-5" />
-                    <span className="font-semibold">Agregar calendario</span>
-                  </button>
+      <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-2xl border border-gray-200/50 p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 card-hover">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Configurar Calendarios</h2>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+            <button onClick={handleCreateCalendar} className="flex items-center justify-center space-x-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white rounded-xl hover:from-brand-blue-800 hover:to-brand-blue-700 transition-all duration-300 shadow-lg shadow-brand-blue-900/30 hover:shadow-xl hover:shadow-brand-blue-900/40 transform hover:scale-105 text-sm sm:text-base">
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="font-semibold">Agregar calendario</span>
+            </button>
             {selectedCalendars.length >= 2 && (
-              <button onClick={() => setShowMergeModal(true)} className="flex items-center space-x-2 px-4 py-2 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/70 transition-colors shadow-sm hover:shadow-md">
+              <button onClick={() => setShowMergeModal(true)} className="flex items-center justify-center space-x-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors shadow-sm hover:shadow-md text-sm sm:text-base">
                 <Merge className="w-4 h-4" />
                 <span>Fusionar ({selectedCalendars.length})</span>
               </button>
@@ -209,7 +209,7 @@ export const PersonalCalendarsView: React.FC<PersonalCalendarsViewProps> = ({ on
         {/* All Calendars Display */}
         <div className="mb-6">
           {calendars.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-5">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 p-2 sm:p-5">
               {(showAllCalendars ? calendars : calendars.slice(0, 6)).map((calendar) => (
                 <div
                   key={calendar.id}

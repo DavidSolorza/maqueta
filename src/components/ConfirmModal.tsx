@@ -49,7 +49,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-start justify-center z-[9999] p-4 pt-32"
+      className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-start justify-center z-[9999] p-4 pt-20 sm:pt-[100px]"
       style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -57,8 +57,8 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         }
       }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-scale-in relative z-[10000]">
-        <div className="p-6">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-scale-in relative z-[10000]">
+        <div className="p-4 sm:p-6">
           <div className="flex items-start space-x-4">
             <div className={`flex-shrink-0 p-3 rounded-full ${iconBgStyles[type]}`}>
               {icons[type]}
@@ -76,16 +76,16 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </div>
         </div>
 
-        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3 rounded-b-lg">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 rounded-b-xl sm:rounded-b-lg">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors text-sm sm:text-base"
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
-            className={`px-4 py-2 text-white rounded-lg transition-colors ${buttonStyles[type]}`}
+            className={`px-4 py-2 text-white rounded-lg transition-colors text-sm sm:text-base ${buttonStyles[type]}`}
           >
             {confirmText}
           </button>

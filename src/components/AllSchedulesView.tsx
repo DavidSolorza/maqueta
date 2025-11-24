@@ -171,18 +171,18 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({ schedules, o
     <div className="min-h-screen">
       <div className="container px-4 py-8 mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center space-x-4">
-            <button onClick={onBack} className="flex items-center px-4 py-2 space-x-2 text-gray-700 dark:text-gray-300 transition-all duration-300 hover:text-brand-blue-900 dark:hover:text-brand-blue-400 hover:bg-blue-50 dark:hover:bg-gray-800 rounded-xl transform hover:scale-105">
-              <ArrowLeft className="w-5 h-5" />
-              <span className="font-semibold">Volver</span>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 sm:mb-12 gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <button onClick={onBack} className="flex items-center px-3 py-2 sm:px-4 sm:py-2 space-x-2 text-gray-700 transition-all duration-300 hover:text-brand-blue-900 hover:bg-blue-50 rounded-xl transform hover:scale-105 self-start sm:self-auto">
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="font-semibold text-sm sm:text-base">Volver</span>
             </button>
 
             <div>
-              <h1 className="text-4xl md:text-5xl font-extrabold mb-2 bg-gradient-to-r from-brand-blue-900 via-brand-blue-700 to-brand-orange-500 bg-clip-text text-transparent animate-gradient">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-1 sm:mb-2 bg-gradient-to-r from-brand-blue-900 via-brand-blue-700 to-brand-orange-500 bg-clip-text text-transparent animate-gradient">
                 Horarios Optimizados
               </h1>
-              <p className="text-lg text-gray-700 dark:text-gray-300">
+              <p className="text-sm sm:text-base md:text-lg text-gray-700">
                 {filteredSchedules.length} de {schedules.length} horarios válidos • {allSubjects.length} materias registradas
                 {targetSubjectCount && ` • Mostrando horarios con ${targetSubjectCount} materias`}
               </p>
@@ -197,7 +197,7 @@ export const AllSchedulesView: React.FC<AllSchedulesViewProps> = ({ schedules, o
         </div>
 
         {/* All Subjects Display */}
-        <div className="p-6 mb-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-xl card-hover">
+        <div className="p-4 sm:p-6 mb-6 sm:mb-8 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl sm:rounded-2xl shadow-xl card-hover">
           <h3 className="mb-3 font-medium text-gray-900 dark:text-white">📚 Todas las materias disponibles ({allSubjects.length})</h3>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {allSubjects.map((subject) => (

@@ -140,33 +140,33 @@ export const ReviewsView: React.FC<ReviewsViewProps> = ({ onBack }) => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="text-center mb-12 animate-fade-in">
-        <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-brand-blue-900 via-brand-blue-700 to-brand-orange-500 bg-clip-text text-transparent animate-gradient">
+      <div className="text-center mb-8 sm:mb-12 animate-fade-in px-4">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 sm:mb-6 bg-gradient-to-r from-brand-blue-900 via-brand-blue-700 to-brand-orange-500 bg-clip-text text-transparent animate-gradient">
           Reseñas y Opiniones
         </h1>
-        <p className="text-xl text-gray-700 dark:text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-base sm:text-lg md:text-xl text-gray-700 mb-4 sm:mb-8 max-w-2xl mx-auto leading-relaxed px-2">
           Comparte tu experiencia sobre profesores, materias y más.
           <span className="block mt-2 text-brand-orange-500 font-semibold">Ayuda a otros estudiantes a tomar mejores decisiones</span>
         </p>
       </div>
 
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 p-8 mb-8 card-hover">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Reseñas ({filteredReviews.length})</h2>
+      <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-2xl border border-gray-200/50 p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 card-hover">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Reseñas ({filteredReviews.length})</h2>
           <button
             onClick={() => {
               setReviewToEdit(null);
               setShowCreateModal(true);
             }}
-            className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white rounded-xl hover:from-brand-blue-800 hover:to-brand-blue-700 dark:from-brand-blue-800 dark:to-brand-blue-700 dark:hover:from-brand-blue-700 dark:hover:to-brand-blue-600 transition-all duration-300 shadow-lg shadow-brand-blue-900/30 hover:shadow-xl hover:shadow-brand-blue-900/40 transform hover:scale-105"
+            className="flex items-center justify-center space-x-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white rounded-xl hover:from-brand-blue-800 hover:to-brand-blue-700 transition-all duration-300 shadow-lg shadow-brand-blue-900/30 hover:shadow-xl hover:shadow-brand-blue-900/40 transform hover:scale-105 text-sm sm:text-base"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>Nueva Reseña</span>
           </button>
         </div>
 
         {/* Filters */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-4 sm:mb-6">
           <div>
             <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Buscar</label>
             <div className="relative">
