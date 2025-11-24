@@ -124,7 +124,7 @@ export const CreateCalendarModal: React.FC<CreateCalendarModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-start justify-center z-[9999] p-4 pt-32"
+      className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-start justify-center z-[9999] p-2 sm:p-4 pt-20 sm:pt-[100px]"
       style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -132,9 +132,9 @@ export const CreateCalendarModal: React.FC<CreateCalendarModalProps> = ({
         }
       }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col relative z-[10000]">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] sm:max-h-[90vh] flex flex-col relative z-[10000] m-2 sm:m-0">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-white rounded-t-2xl">
+        <div className="p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-white rounded-t-xl sm:rounded-t-2xl">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -157,7 +157,7 @@ export const CreateCalendarModal: React.FC<CreateCalendarModalProps> = ({
         </div>
 
         {/* Content - Scrollable */}
-        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
           {/* Templates Section */}
           {!calendarToEdit && (
             <div>
@@ -177,7 +177,7 @@ export const CreateCalendarModal: React.FC<CreateCalendarModalProps> = ({
               </button>
 
               {showTemplates && (
-                <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                   {CALENDAR_TEMPLATES.map((template) => (
                     <button
                       key={template.name}
@@ -296,7 +296,7 @@ export const CreateCalendarModal: React.FC<CreateCalendarModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3 bg-gray-50 dark:bg-gray-900/50">
+        <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 bg-gray-50 rounded-b-xl sm:rounded-b-2xl flex-shrink-0">
           <button
             onClick={onClose}
             className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"

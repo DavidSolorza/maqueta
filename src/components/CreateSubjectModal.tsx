@@ -256,7 +256,7 @@ export const CreateSubjectModal: React.FC<CreateSubjectModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-start justify-center z-[9999] p-4 pt-[100px]"
+      className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-start justify-center z-[9999] p-2 sm:p-4 pt-20 sm:pt-[100px]"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -264,18 +264,18 @@ export const CreateSubjectModal: React.FC<CreateSubjectModalProps> = ({
       }}
       style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] flex flex-col relative z-[10000]">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-3xl w-full max-h-[85vh] sm:max-h-[90vh] flex flex-col relative z-[10000] m-2 sm:m-0">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-white rounded-t-2xl">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <div className="p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-white rounded-t-xl sm:rounded-t-2xl">
+          <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+            <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0">
+              <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 truncate">
                 {subjectToEdit ? 'Editar Materia' : 'Nueva Materia'}
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs sm:text-sm text-gray-600 hidden sm:block">
                 {subjectToEdit ? 'Modifica los detalles de la materia' : 'Agrega una nueva materia universitaria'}
               </p>
             </div>
@@ -289,7 +289,7 @@ export const CreateSubjectModal: React.FC<CreateSubjectModalProps> = ({
         </div>
 
         {/* Content - Scrollable */}
-        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
           {/* Templates Section */}
           {!subjectToEdit && (
             <div>
@@ -309,7 +309,7 @@ export const CreateSubjectModal: React.FC<CreateSubjectModalProps> = ({
               </button>
 
               {showTemplates && (
-                <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                   {SUBJECT_TEMPLATES.map((template) => (
                     <button
                       key={template.name}
@@ -361,7 +361,7 @@ export const CreateSubjectModal: React.FC<CreateSubjectModalProps> = ({
           {/* Form Fields */}
           <div className="space-y-4">
             {/* Basic Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Nombre de la materia <span className="text-red-500">*</span>
@@ -443,7 +443,7 @@ export const CreateSubjectModal: React.FC<CreateSubjectModalProps> = ({
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Profesor (opcional)
               </label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <input
                   type="text"
                   value={professorName}
@@ -494,12 +494,12 @@ export const CreateSubjectModal: React.FC<CreateSubjectModalProps> = ({
                   {timeSlots.map((slot, index) => (
                     <div
                       key={index}
-                      className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600"
+                      className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200"
                     >
                       <select
                         value={slot.day}
                         onChange={(e) => handleUpdateTimeSlot(index, 'day', e.target.value)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 sm:flex-none px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[120px]"
                       >
                         {DAYS.map((day) => (
                           <option key={day} value={day}>
@@ -507,22 +507,24 @@ export const CreateSubjectModal: React.FC<CreateSubjectModalProps> = ({
                           </option>
                         ))}
                       </select>
-                      <input
-                        type="time"
-                        value={slot.startTime}
-                        onChange={(e) => handleUpdateTimeSlot(index, 'startTime', e.target.value)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <span className="text-gray-500 dark:text-gray-400 font-medium">-</span>
-                      <input
-                        type="time"
-                        value={slot.endTime}
-                        onChange={(e) => handleUpdateTimeSlot(index, 'endTime', e.target.value)}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
+                      <div className="flex items-center gap-2 flex-1 sm:flex-none">
+                        <input
+                          type="time"
+                          value={slot.startTime}
+                          onChange={(e) => handleUpdateTimeSlot(index, 'startTime', e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[100px]"
+                        />
+                        <span className="text-gray-500 font-medium">-</span>
+                        <input
+                          type="time"
+                          value={slot.endTime}
+                          onChange={(e) => handleUpdateTimeSlot(index, 'endTime', e.target.value)}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[100px]"
+                        />
+                      </div>
                       <button
                         onClick={() => handleRemoveTimeSlot(index)}
-                        className="p-2 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors self-center sm:self-auto"
                         title="Eliminar horario"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -581,7 +583,7 @@ export const CreateSubjectModal: React.FC<CreateSubjectModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-200 flex justify-end space-x-3 bg-gray-50 rounded-b-2xl flex-shrink-0">
+        <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 bg-gray-50 rounded-b-xl sm:rounded-b-2xl flex-shrink-0">
           <button
             onClick={onClose}
             className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"

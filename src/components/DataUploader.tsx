@@ -295,11 +295,11 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="text-center mb-12 animate-fade-in">
-        <h1 className="text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-brand-blue-900 via-brand-blue-700 to-brand-orange-500 bg-clip-text text-transparent animate-gradient">
+      <div className="text-center mb-8 sm:mb-12 animate-fade-in px-4">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 sm:mb-6 bg-gradient-to-r from-brand-blue-900 via-brand-blue-700 to-brand-orange-500 bg-clip-text text-transparent animate-gradient">
           Optimizador de Horarios Universitarios
         </h1>
-        <p className="text-xl text-gray-700 dark:text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-base sm:text-lg md:text-xl text-gray-700 mb-4 sm:mb-8 max-w-2xl mx-auto leading-relaxed px-2">
           Crea horarios universitarios optimizados sin choques y con mínimos huecos. 
           <span className="block mt-2 text-brand-orange-500 font-semibold">Planifica tu semestre perfecto</span>
         </p>
@@ -322,41 +322,42 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
         </div>
       )}
 
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 p-8 mb-8 card-hover">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Configurar Materias</h2>
-          <div className="flex space-x-3">
-            <button onClick={handleUseSampleData} className="flex items-center space-x-2 px-4 py-2 bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/70 transition-colors shadow-sm hover:shadow-md">
+      <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-2xl border border-gray-200/50 p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 card-hover">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900">Configurar Materias</h2>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+            <button onClick={handleUseSampleData} className="flex items-center justify-center space-x-2 px-3 py-2 sm:px-4 sm:py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors shadow-sm hover:shadow-md text-sm sm:text-base">
               <FileText className="w-4 h-4" />
-              <span>Usar datos de ejemplo</span>
+              <span className="truncate">Usar datos de ejemplo</span>
             </button>
-            <button onClick={handleCreateSubject} className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white rounded-xl hover:from-brand-blue-800 hover:to-brand-blue-700 dark:from-brand-blue-800 dark:to-brand-blue-700 dark:hover:from-brand-blue-700 dark:hover:to-brand-blue-600 transition-all duration-300 shadow-lg shadow-brand-blue-900/30 hover:shadow-xl hover:shadow-brand-blue-900/40 transform hover:scale-105">
-              <Plus className="w-5 h-5" />
+            <button onClick={handleCreateSubject} className="flex items-center justify-center space-x-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white rounded-xl hover:from-brand-blue-800 hover:to-brand-blue-700 transition-all duration-300 shadow-lg shadow-brand-blue-900/30 hover:shadow-xl hover:shadow-brand-blue-900/40 transform hover:scale-105 text-sm sm:text-base">
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="font-semibold">Agregar materia</span>
             </button>
-            <button onClick={() => setShowTextInput(!showTextInput)} className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-brand-orange-500 to-brand-orange-600 text-white rounded-xl hover:from-brand-orange-600 hover:to-brand-orange-700 dark:from-brand-orange-600 dark:to-brand-orange-700 dark:hover:from-brand-orange-700 dark:hover:to-brand-orange-800 transition-all duration-300 shadow-lg shadow-brand-orange-500/30 hover:shadow-xl hover:shadow-brand-orange-500/40 transform hover:scale-105">
-              <Type className="w-5 h-5" />
+            <button onClick={() => setShowTextInput(!showTextInput)} className="flex items-center justify-center space-x-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-brand-orange-500 to-brand-orange-600 text-white rounded-xl hover:from-brand-orange-600 hover:to-brand-orange-700 transition-all duration-300 shadow-lg shadow-brand-orange-500/30 hover:shadow-xl hover:shadow-brand-orange-500/40 transform hover:scale-105 text-sm sm:text-base">
+              <Type className="w-4 h-4 sm:w-5 sm:h-5" />
               <span className="font-semibold">Escribir por texto</span>
             </button>
           </div>
         </div>
 
         {/* Target Subject Count */}
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-6 border border-blue-200 dark:border-blue-800">
-          <div className="flex items-center space-x-3 mb-3">
-            <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <h3 className="font-medium text-blue-900 dark:text-blue-300">Número específico de materias (opcional)</h3>
+        <div className="bg-blue-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-blue-200">
+          <div className="flex items-center space-x-2 sm:space-x-3 mb-2 sm:mb-3">
+            <Target className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 flex-shrink-0" />
+            <h3 className="font-medium text-blue-900 text-sm sm:text-base">Número específico de materias (opcional)</h3>
           </div>
-
-          <div className="flex items-center space-x-4">
-            <label className="flex items-center space-x-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <label className="flex items-center space-x-2 text-sm sm:text-base">
               <input type="checkbox" checked={targetSubjectCount !== undefined} onChange={(e) => setTargetSubjectCount(e.target.checked ? 4 : undefined)} className="rounded border-blue-300 dark:border-blue-600 text-blue-600 dark:text-blue-400 focus:ring-blue-500 bg-white dark:bg-gray-700" />
               <span className="text-blue-800 dark:text-blue-200">Generar horarios con exactamente</span>
             </label>
-            {targetSubjectCount !== undefined && <input type="number" value={targetSubjectCount} onChange={(e) => setTargetSubjectCount(parseInt(e.target.value) || 1)} min="1" max={subjects.length} className="w-20 px-2 py-1 border border-blue-300 dark:border-blue-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />}
-            <span className="text-blue-800 dark:text-blue-200">materias</span>
+            <div className="flex items-center gap-2">
+              {targetSubjectCount !== undefined && <input type="number" value={targetSubjectCount} onChange={(e) => setTargetSubjectCount(parseInt(e.target.value) || 1)} min="1" max={subjects.length} className="w-16 sm:w-20 px-2 py-1 border border-blue-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base" />}
+              <span className="text-blue-800 text-sm sm:text-base">materias</span>
+            </div>
           </div>
-          <p className="text-sm text-blue-700 dark:text-blue-300 mt-2">Si no seleccionas esta opción, se generarán horarios con todas las combinaciones posibles (excluyendo horarios de una sola materia).</p>
+          <p className="text-xs sm:text-sm text-blue-700 mt-2">Si no seleccionas esta opción, se generarán horarios con todas las combinaciones posibles (excluyendo horarios de una sola materia).</p>
         </div>
 
         {showTextInput && (
@@ -421,7 +422,7 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
         {/* All Subjects Display */}
         <div className="mb-6">
           {subjects.length > 0 ? (
-            <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-5">
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 p-2 sm:p-5">
               {(showAllSubjects ? subjects : subjects.slice(0, 6)).map((subject) => (
                 <div
                   key={subject.id}
@@ -544,18 +545,18 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
         </div>
 
         {subjects.length > 0 && (
-          <div className="flex flex-col items-center space-y-4">
+          <div className="flex flex-col items-center space-y-3 sm:space-y-4 w-full">
             <button
               onClick={handleCreateSubject}
-              className="w-full max-w-md flex items-center justify-center space-x-2 px-4 py-3 border-2 border-dashed border-blue-300 dark:border-blue-600 rounded-lg text-blue-600 dark:text-blue-400 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors font-medium"
+              className="w-full sm:max-w-md flex items-center justify-center space-x-2 px-4 py-3 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:border-blue-400 hover:bg-blue-50 transition-colors font-medium text-sm sm:text-base"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>Agregar otra materia</span>
             </button>
             <button
               onClick={handleSubmit}
               disabled={conflicts.length > 0}
-              className="px-10 py-4 bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 dark:from-brand-blue-800 dark:to-brand-blue-700 text-white rounded-xl hover:from-brand-blue-800 hover:to-brand-blue-700 dark:hover:from-brand-blue-700 dark:hover:to-brand-blue-600 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-300 font-bold text-lg shadow-xl shadow-brand-blue-900/30 hover:shadow-2xl hover:shadow-brand-blue-900/40 transform hover:scale-105 disabled:transform-none"
+              className="w-full sm:w-auto px-6 sm:px-10 py-3 sm:py-4 bg-gradient-to-r from-brand-blue-900 to-brand-blue-800 text-white rounded-xl hover:from-brand-blue-800 hover:to-brand-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-300 font-bold text-base sm:text-lg shadow-xl shadow-brand-blue-900/30 hover:shadow-2xl hover:shadow-brand-blue-900/40 transform hover:scale-105 disabled:transform-none"
             >
               Generar Horarios Optimizados
               {targetSubjectCount && ` (${targetSubjectCount} materias)`}

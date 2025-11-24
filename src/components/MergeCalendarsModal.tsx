@@ -119,7 +119,7 @@ export const MergeCalendarsModal: React.FC<MergeCalendarsModalProps> = ({ calend
 
   return (
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-start justify-center z-[9999] p-4 pt-32"
+      className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-start justify-center z-[9999] p-2 sm:p-4 pt-20 sm:pt-[100px]"
       style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -127,8 +127,8 @@ export const MergeCalendarsModal: React.FC<MergeCalendarsModalProps> = ({ calend
         }
       }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col relative z-[10000]">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-white rounded-t-2xl">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] sm:max-h-[90vh] flex flex-col relative z-[10000] m-2 sm:m-0">
+        <div className="p-4 sm:p-6 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-white rounded-t-xl sm:rounded-t-2xl">
           <div className="flex items-center space-x-3">
             <Merge className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Fusionar Calendarios</h2>
@@ -138,7 +138,7 @@ export const MergeCalendarsModal: React.FC<MergeCalendarsModalProps> = ({ calend
           </button>
         </div>
 
-        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <h3 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Calendarios a fusionar</h3>
             <div className="space-y-2">
@@ -241,7 +241,7 @@ export const MergeCalendarsModal: React.FC<MergeCalendarsModalProps> = ({ calend
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-200 flex justify-end space-x-3 bg-gray-50 rounded-b-2xl flex-shrink-0">
+        <div className="p-4 sm:p-6 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 bg-gray-50 rounded-b-xl sm:rounded-b-2xl flex-shrink-0">
           <button onClick={onClose} className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
             Cancelar
           </button>
