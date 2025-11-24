@@ -349,8 +349,8 @@ export default function DataUploader({ onDataSubmit }: DataUploaderProps) {
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <label className="flex items-center space-x-2 text-sm sm:text-base">
-              <input type="checkbox" checked={targetSubjectCount !== undefined} onChange={(e) => setTargetSubjectCount(e.target.checked ? 4 : undefined)} className="rounded border-blue-300 text-blue-600 focus:ring-blue-500 bg-white" />
-              <span className="text-blue-800">Generar horarios con exactamente</span>
+              <input type="checkbox" checked={targetSubjectCount !== undefined} onChange={(e) => setTargetSubjectCount(e.target.checked ? 4 : undefined)} className="rounded border-blue-300 dark:border-blue-600 text-blue-600 dark:text-blue-400 focus:ring-blue-500 bg-white dark:bg-gray-700" />
+              <span className="text-blue-800 dark:text-blue-200">Generar horarios con exactamente</span>
             </label>
             <div className="flex items-center gap-2">
               {targetSubjectCount !== undefined && <input type="number" value={targetSubjectCount} onChange={(e) => setTargetSubjectCount(parseInt(e.target.value) || 1)} min="1" max={subjects.length} className="w-16 sm:w-20 px-2 py-1 border border-blue-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base" />}

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Send, Bot, User, X, Minimize2, Maximize2, CheckCircle } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
+import { geminiRequest } from '../utils/geminiRequest';
 
 interface Course {
   id: string;
@@ -9,7 +10,7 @@ interface Course {
   schedule: string[];
 }
 
-// *** Simulación de utilidad de copia (mantener fuera del componente) ***
+// Utilidad de copia
 const copyToClipboard = (text: string) => {
   return new Promise<void>((resolve, reject) => {
     try {
@@ -30,7 +31,7 @@ const copyToClipboard = (text: string) => {
   });
 };
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY; 
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 const SchedulerChatbot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -40,52 +41,38 @@ const SchedulerChatbot: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [copiedMessage, setCopiedMessage] = useState<string | null>(null); // Estado para la alerta
+  const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-  
-  // Ocultar la alerta de copiado después de un tiempo
+
   useEffect(() => {
     if (copiedMessage) {
-      const timer = setTimeout(() => {
-        setCopiedMessage(null);
-      }, 3000); 
+      const timer = setTimeout(() => setCopiedMessage(null), 3000);
       return () => clearTimeout(timer);
     }
   }, [copiedMessage]);
 
-
-  // OCR + AI parsing with Gemini Vision API
+  // 🧠 Imagen -> texto -> análisis
   const processScheduleImage = async (file: File): Promise<string> => {
     if (!GEMINI_API_KEY) {
-      throw new Error('Error de Configuración: La clave API de Gemini no está cargada (VITE_GEMINI_API_KEY). Verifica tu archivo .env y reinicia el servidor.');
-    }
-    
-    const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
-    
-    if (file.size > MAX_FILE_SIZE) {
-      return 'Imagen muy grande (máx 4MB). Reduce el tamaño.';
+      throw new Error('Error de Configuración: falta la clave API (VITE_GEMINI_API_KEY).');
     }
 
-    try {
-      // Convert image to base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(',')[1]); 
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+    const MAX_FILE_SIZE = 4 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) return 'Imagen muy grande (máx 4MB). Reduce el tamaño.';
 
-      
-      const prompt = `Analiza esta imagen de un horario universitario y extrae SOLO las materias en este formato EXACTO:
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    const prompt = `Analiza esta imagen de un horario universitario y extrae SOLO las materias en este formato EXACTO:
 
 CODIGO | NOMBRE | CREDITOS | DIA HORA_INICIO-HORA_FIN, DIA HORA_INICIO-HORA_FIN
 
@@ -95,14 +82,13 @@ CS101 | Programación I | 3 | Martes 10:00-12:00, Jueves 10:00-12:00
 
 Reglas estrictas:
 - Un formato por línea
-- Horas en formato 24h (08:00, 14:00)
-- Días: Lunes, Martes, Miércoles, Jueves, Viernes
+- Horas 24h (08:00, 14:00)
+- Días: Lunes-Viernes
 - Si no hay créditos visibles, usa 3
-- NO agregues comentarios ni explicaciones
-- SOLO devuelve las líneas con datos`;
+- NO explicaciones, solo datos`;
 
-      // *** Using 'gemini-flash-latest' as identified ***
-      const response = await fetch(
+    try {
+      const data = await geminiRequest(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: 'POST',
@@ -111,7 +97,7 @@ Reglas estrictas:
             contents: [{
               parts: [
                 { text: prompt },
-                { 
+                {
                   inline_data: {
                     mime_type: file.type,
                     data: base64
@@ -119,73 +105,56 @@ Reglas estrictas:
                 }
               ]
             }],
-            generationConfig: {
-              temperature: 0.1,
-              maxOutputTokens: 2048
-            }
+            generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
           })
         }
       );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Gemini Vision API Error:', errorData);
-        // Si el error es 400 (Bad Request), probablemente sea la clave no válida.
-        throw new Error(`Error ${response.status}: ${errorData?.error?.message || 'Fallo al conectar con la API (revisa la clave API)'}`);
-      }
-
-      const data = await response.json();
       const extractedText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      
       if (!extractedText.trim()) {
         return 'No pude extraer información. Asegúrate de que la imagen muestre un horario claro.';
       }
 
       return await parseScheduleWithAI(extractedText);
-      
     } catch (error: any) {
-      console.error('Gemini Error:', error);
-      throw new Error(`Error al procesar la imagen: ${error.message}. Usa "Escribir por texto" como alternativa.`);
+      throw new Error(error.message || 'Ocurrió un error al procesar la imagen.');
     }
   };
 
-  // Parse schedule using intelligent pattern matching (adapted for Gemini's structured output)
   const parseScheduleWithAI = async (ocrText: string): Promise<string> => {
     const lines = ocrText.split('\n').filter(line => line.trim());
     const courses: Course[] = [];
-    
+
     const geminiLinePattern = /([A-Z0-9]+)\s*\|\s*([^|]+)\s*\|\s*(\d+)\s*\|\s*(.*)/i;
     const schedulePattern = /(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado)\s*(\d{1,2}:\d{2})-(\d{1,2}:\d{2})/gi;
-    
-    lines.forEach(line => {
-      const lineMatch = geminiLinePattern.exec(line);
-      if (lineMatch) {
-        const [, id, name, creditsStr, schedulePart] = lineMatch;
+
+    for (const line of lines) {
+      const match = geminiLinePattern.exec(line);
+      if (match) {
+        const [, id, name, creditsStr, schedulePart] = match;
         const schedules: string[] = [];
         let scheduleMatch;
-        
         while ((scheduleMatch = schedulePattern.exec(schedulePart)) !== null) {
           schedules.push(`${scheduleMatch[1]} ${scheduleMatch[2]}-${scheduleMatch[3]}`);
         }
-        
         courses.push({
           id: id.trim(),
           name: name.trim(),
-          credits: parseInt(creditsStr.trim(), 10),
-          schedule: schedules.length > 0 ? schedules : ['Horario no detectado']
+          credits: parseInt(creditsStr, 10),
+          schedule: schedules.length ? schedules : ['Horario no detectado']
         });
       }
-    });
-    
-    if (courses.length === 0) {
-      return `He detectado el siguiente texto:\n\n${ocrText.substring(0, 500)}...\n\nNo pude identificar materias con el formato esperado (ID | Nombre | Créditos | Horario). ¿Podrías subir una imagen más clara o describir el formato del horario?`;
     }
-    
-    const formattedCourses = courses.map(course => 
-      `${course.id} | ${course.name} | ${course.credits} | ${course.schedule.join(' | ')}`
-    ).join('\n');
-    
-    return `He procesado tu horario y detecté ${courses.length} materia(s) con el formato solicitado:\n\n${formattedCourses}\n\n¿Quieres que genere combinaciones de horarios o exportar estos datos?`;
+
+    if (!courses.length) {
+      return `He detectado el siguiente texto:\n\n${ocrText.substring(0, 500)}...\n\nNo pude identificar materias con el formato esperado.`;
+    }
+
+    const formatted = courses
+      .map(c => `${c.id} | ${c.name} | ${c.credits} | ${c.schedule.join(' | ')}`)
+      .join('\n');
+
+    return `He procesado tu horario y detecté ${courses.length} materia(s):\n\n${formatted}\n\n¿Deseas generar combinaciones o exportar los datos?`;
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -193,170 +162,96 @@ Reglas estrictas:
     if (!file) return;
 
     setIsProcessing(true);
-    const userMessage = { id: Date.now(), type: 'user' as const, content: `📸 He subido una imagen: ${file.name}` };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => [...prev, { id: Date.now(), type: 'user', content: `📸 He subido una imagen: ${file.name}` }]);
 
     try {
       const result = await processScheduleImage(file);
-      const botMessage = { id: Date.now() + 1, type: 'bot' as const, content: result };
-      setMessages(prev => [...prev, botMessage]);
-    } catch (error) {
-      // Se usa el error capturado de processScheduleImage para mostrarlo al usuario
-      const errorMessage = { id: Date.now() + 1, type: 'bot' as const, content: error instanceof Error ? error.message : 'Error desconocido al procesar la imagen' };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', content: result }]);
+    } catch (error: any) {
+      setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', content: error.message }]);
     } finally {
       setIsProcessing(false);
-      // @ts-ignore
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  // AI-powered response with Gemini API
+  // 🗣️ Chat general
   const getAIResponse = async (question: string, context: typeof messages): Promise<string> => {
-    if (!GEMINI_API_KEY) {
-      throw new Error('Error de Configuración: La clave API de Gemini no está cargada para el chat. Verifica tu archivo .env y reinicia el servidor.');
-    }
-    
+    if (!GEMINI_API_KEY) throw new Error('Error: Falta la clave API de Gemini.');
+
+    const conversation = context.slice(-6).map(m => `${m.type === 'user' ? 'Usuario' : 'Asistente'}: ${m.content}`).join('\n');
+
+    const systemPrompt = `Eres SchedulerBot, un asistente amigable para organizar horarios universitarios.
+Habla casual, directo, sin formato Markdown.
+Funciones: OCR, combinaciones, exportar, detectar choques, etc.
+
+HISTORIAL:
+${conversation}
+
+PREGUNTA: ${question}`;
+
     try {
-      const conversationHistory = context.slice(-6).map(m => 
-        `${m.type === 'user' ? 'Usuario' : 'Asistente'}: ${m.content}`
-      ).join('\n');
-
-      const systemPrompt = `Eres SchedulerBot, un asistente amigable para organizar horarios de universidad.
-Habla de forma casual y ve al grano, como un compañero de clase.
-
-FUNCIONES DE LA APP:
-- Cargar materias: Manual, por texto, o subiendo un JSON.
-- OCR de imágenes: Sube una foto de tu horario y la digitalizo.
-- Generador: Crea combinaciones de horarios sin choques.
-- Exportar: Saca tu horario o el chat como PNG o JSON.
-- Detección de conflictos: Te avisa si hay choques.
-- Filtros: Optimiza por huecos, créditos, o días.
-
-HISTORIAL RECIENTE:
-${conversationHistory}
-
-PREGUNTA: ${question}
-
-REGLAS IMPORTANTES:
-1.  **Tono:** Sé amable, conciso y directo. Usa un lenguaje humano y casual.
-2.  **FORMATO:** ¡NO USES MARKDOWN! Escribe solo texto plano. (No uses **negritas**, *cursivas*, - listas, etc.). Las negritas y otros formatos se ven mal en el chat.`;
-
-      // *** Using 'gemini-flash-latest' as identified ***
-      const response = await fetch(
+      const data = await geminiRequest(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: systemPrompt }] }],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 500
-            }
+            generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
           })
         }
       );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Gemini Chat API Error:', errorData);
-        throw new Error(`Error ${response.status}: ${errorData?.error?.message || 'Fallo al conectar con la API (revisa la clave API)'}`);
-      }
-
-      const data = await response.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || 
-        'No pude generar respuesta. Reformula tu pregunta.';
-      
+      return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No pude generar una respuesta.';
     } catch (error: any) {
-      console.error('Gemini error:', error);
-      throw new Error(`Error temporal al procesar la pregunta: ${error.message}. Intenta de nuevo.`);
+      throw new Error(error.message || 'Ocurrió un error al generar la respuesta.');
     }
   };
-  // === FIN REFECTORIZACIÓN CHAT ===
 
+  // 📨 Enviar mensaje
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
-
-    const userMessage = { id: Date.now(), type: 'user' as const, content: inputText };
-    const currentMessages = [...messages, userMessage];
-    setMessages(currentMessages); 
-    const question = inputText;
+    const userMsg = { id: Date.now(), type: 'user' as const, content: inputText };
+    const currentMessages = [...messages, userMsg];
+    setMessages(currentMessages);
     setInputText('');
-
     setIsProcessing(true);
 
     try {
-      const aiResponse = await getAIResponse(question, currentMessages);
-      const botMessage = { 
-        id: Date.now() + 1, 
-        type: 'bot' as const, 
-        content: aiResponse 
-      };
-      setMessages(prev => [...prev, botMessage]);
-    } catch (error) {
-      const errorMessage = { 
-        id: Date.now() + 1, 
-        type: 'bot' as const, 
-        content: error instanceof Error ? error.message : 'Lo siento, hubo un error desconocido al procesar tu pregunta.' 
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      const aiResponse = await getAIResponse(inputText, currentMessages);
+      setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', content: aiResponse }]);
+    } catch (error: any) {
+      setMessages(prev => [...prev, { id: Date.now() + 1, type: 'bot', content: error.message }]);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  /**
-   * REFACTORIZACIÓN: La función ahora detecta el formato de materia en la última
-   * respuesta del bot, copia esas líneas al portapapeles y notifica al usuario.
-   * Si no encuentra el formato, intenta la exportación a PNG como fallback.
-   */
+  // (Exportar chat se mantiene igual)
   const handleExportChat = async () => {
     const lastBotMessage = messages.slice().reverse().find(m => m.type === 'bot');
-
-    // Patrón para una línea de materia: ID | Nombre | Créditos | Horario
-    // Ajustado para el nuevo formato (sin "créditos")
-    const courseLinePattern = /^[A-Z0-9]+\s*\|\s*[^|]+\s*\|\s*\d+\s*\|\s*.*$/gim;
-    
+    const pattern = /^[A-Z0-9]+\s*\|\s*[^|]+\s*\|\s*\d+\s*\|\s*.*$/gim;
     if (lastBotMessage) {
-      const botContent = lastBotMessage.content;
-      // Encuentra todas las líneas que coincidan con el formato
-      const matches = botContent.match(courseLinePattern);
-
-      if (matches && matches.length > 0) {
-        const textToCopy = matches.join('\n');
-        try {
-          await copyToClipboard(textToCopy);
-          setCopiedMessage('¡Formato de materias copiado! Puedes usar "Escribir por Texto" en la página principal.');
-          return;
-        } catch (error) {
-          console.error("Error al copiar al portapapeles:", error);
-          setCopiedMessage('Error al copiar el texto. Intenta hacerlo manualmente.');
-          return;
-        }
+      const matches = lastBotMessage.content.match(pattern);
+      if (matches?.length) {
+        await copyToClipboard(matches.join('\n'));
+        setCopiedMessage('¡Materias copiadas al portapapeles!');
+        return;
       }
     }
 
-    // Fallback: Si no hay mensaje de bot o no hay formato de materia, exporta como PNG
     try {
       const chatContainer = document.getElementById('chat-container');
-      if (!chatContainer) {
-        throw new Error("No se encontró el contenedor del chat.");
-      }
-      
-      const dataUrl = await htmlToImage.toPng(chatContainer, {
-        backgroundColor: '#ffffff',
-        pixelRatio: 2,
-      });
-      
+      if (!chatContainer) throw new Error('No se encontró el contenedor.');
+      const dataUrl = await htmlToImage.toPng(chatContainer, { backgroundColor: '#ffffff', pixelRatio: 2 });
       const link = document.createElement('a');
       link.download = 'chat-scheduler.png';
       link.href = dataUrl;
       link.click();
-      setCopiedMessage('Chat exportado como imagen (PNG).');
-    } catch (error) {
-      console.error("Error al exportar chat:", error);
-      setCopiedMessage('Error al exportar el chat. Por favor, inténtalo de nuevo.');
+      setCopiedMessage('Chat exportado como imagen.');
+    } catch {
+      setCopiedMessage('Error al exportar el chat.');
     }
   };
 
@@ -378,16 +273,16 @@ REGLAS IMPORTANTES:
       {/* Alerta de Copiado (estilo decente) */}
       {copiedMessage && (
         <div className="fixed top-4 right-4 z-[60] flex items-center p-4 mb-4 text-sm text-green-800 border border-green-300 rounded-lg bg-green-50 shadow-md transition-opacity duration-300 ease-in-out" role="alert">
-            <CheckCircle className="w-5 h-5 mr-3" />
-            <span className="font-medium">{copiedMessage}</span>
-            <button 
-                type="button" 
-                className="ml-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg focus:ring-2 focus:ring-green-400 p-1.5 hover:bg-green-200 inline-flex items-center justify-center h-8 w-8"
-                onClick={() => setCopiedMessage(null)}
-                aria-label="Cerrar"
-            >
-                <X className="w-4 h-4" />
-            </button>
+          <CheckCircle className="w-5 h-5 mr-3" />
+          <span className="font-medium">{copiedMessage}</span>
+          <button
+            type="button"
+            className="ml-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg focus:ring-2 focus:ring-green-400 p-1.5 hover:bg-green-200 inline-flex items-center justify-center h-8 w-8"
+            onClick={() => setCopiedMessage(null)}
+            aria-label="Cerrar"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
@@ -429,11 +324,10 @@ REGLAS IMPORTANTES:
                     className={`mb-4 flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-xs p-3 rounded-lg ${
-                        message.type === 'user'
+                      className={`max-w-xs p-3 rounded-lg ${message.type === 'user'
                           ? 'bg-blue-500 text-white'
                           : 'bg-white border border-gray-200 text-gray-800'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center mb-1">
                         {message.type === 'user' ? (
@@ -484,7 +378,7 @@ REGLAS IMPORTANTES:
                     accept="image/*"
                     className="hidden"
                   />
-                  
+
                   <div className="flex-1 relative">
                     <input
                       type="text"
@@ -503,7 +397,7 @@ REGLAS IMPORTANTES:
                       <Send className="w-5 h-5" />
                     </button>
                   </div>
-                  
+
                   <button
                     onClick={handleExportChat}
                     className="flex items-center px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
